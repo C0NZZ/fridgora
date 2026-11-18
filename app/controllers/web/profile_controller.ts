@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
 import db from '@adonisjs/lucid/services/db'
 import env from '#start/env'
+import { publicAppUrl } from '#config/base_path'
 import { DateTime } from 'luxon'
 import {
   updateProfileValidator,
@@ -145,7 +146,7 @@ export default class ProfileController {
       // Show the API docs (Scalar) link only when swagger is enabled.
       apiDocsEnabled: env.get('SWAGGER_ENABLED') === true,
       // Address users paste into an MCP client (Claude, ChatGPT…) as a custom connector.
-      mcpUrl: `${env.get('APP_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`}/mcp`,
+      mcpUrl: `${publicAppUrl()}/mcp`,
     })
   }
 

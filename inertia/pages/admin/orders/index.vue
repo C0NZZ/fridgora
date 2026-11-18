@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -15,6 +16,8 @@ import { useSelectEnterKey } from '~/composables/use_select_enter_key'
 import FilterBar from '~/components/FilterBar.vue'
 import PaginatedDataTable from '~/components/PaginatedDataTable.vue'
 import OrderPrice from '~/components/OrderPrice.vue'
+
+const appPath = useAppPath()
 
 interface OrderRow {
   id: number
@@ -149,7 +152,7 @@ function storno(orderId: number) {
     rejectLabel: t('common.cancel'),
     destructive: true,
     accept: () => {
-      router.post(`/admin/storno/${orderId}`)
+      router.post(appPath(`/admin/storno/${orderId}`))
     },
   })
 }

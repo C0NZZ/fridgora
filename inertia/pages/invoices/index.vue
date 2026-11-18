@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed, onMounted } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -14,6 +15,8 @@ import { formatDate } from '~/composables/use_format_date'
 import { useListFilters } from '~/composables/use_list_filters'
 import FilterBar from '~/components/FilterBar.vue'
 import PaginatedDataTable from '~/components/PaginatedDataTable.vue'
+
+const appPath = useAppPath()
 
 interface InvoiceOrder {
   id: number
@@ -93,18 +96,18 @@ onMounted(() => {
 })
 
 function requestPaid(id: number) {
-  router.post(`/invoices/${id}/request-paid`)
+  router.post(appPath(`/invoices/${id}/request-paid`))
 }
 
 function cancelPaid(id: number) {
-  router.post(`/invoices/${id}/cancel-paid`)
+  router.post(appPath(`/invoices/${id}/cancel-paid`))
 }
 
 async function showQr(id: number) {
   qrLoading.value = true
   qrDialog.value = true
   try {
-    const res = await fetch(`/invoices/${id}/qrcode`, {
+    const res = await fetch(appPath(`/invoices/${id}/qrcode`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

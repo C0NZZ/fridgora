@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 import { getTestRuntimeEnv } from './tests/utils/test_db.js'
-import { KIOSK_PORT, KIOSK_URL } from './tests/e2e/helpers/mounted_kiosk.js'
+import { MOUNTED_APP_PORT, MOUNTED_APP_URL } from './tests/e2e/helpers/mounted_app.js'
 
 const E2E_PORT = '3345'
 const E2E_BASE_URL = `http://localhost:${E2E_PORT}`
@@ -65,9 +65,9 @@ export default defineConfig({
     },
     {
       command: 'cd build && node bin/server.js',
-      url: `${KIOSK_URL}/`,
+      url: `${MOUNTED_APP_URL}/`,
       reuseExistingServer: false,
-      env: { ...testEnv, PORT: KIOSK_PORT, APP_URL: KIOSK_URL },
+      env: { ...testEnv, PORT: MOUNTED_APP_PORT, APP_URL: MOUNTED_APP_URL },
       timeout: 120 * 1000,
     },
   ],

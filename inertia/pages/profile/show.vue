@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { Head, router, usePage } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -16,6 +17,8 @@ import Dialog from 'primevue/dialog'
 import { useI18n } from '~/composables/use_i18n'
 import { formatDate } from '~/composables/use_format_date'
 import type { SharedProps } from '~/types'
+
+const appPath = useAppPath()
 
 interface UserData {
   id: number
@@ -189,7 +192,7 @@ function schedulePreferencesSave() {
   preferencesSaveTimer = setTimeout(() => {
     savingPreferences.value = true
     router.put(
-      '/profile/preferences',
+      appPath('/profile/preferences'),
       {
         showAllProducts: form.value.showAllProducts,
         sendMailOnPurchase: form.value.sendMailOnPurchase,
@@ -313,7 +316,7 @@ async function postPendingDraft(
 
   const xsrfToken = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/)?.[1] ?? ''
   try {
-    await fetch('/profile/pending-draft', {
+    await fetch(appPath('/profile/pending-draft'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -343,7 +346,7 @@ function requestSensitiveAction(
 function submitProfileRequest() {
   submitting.value = true
   router.put(
-    '/profile',
+    appPath('/profile'),
     {
       displayName: form.value.displayName,
       email: form.value.email,
@@ -365,7 +368,7 @@ function submitProfileRequest() {
 
 function linkProviderRequest(provider: 'microsoft' | 'discord') {
   router.post(
-    '/profile/oidc-link',
+    appPath('/profile/oidc-link'),
     {
       provider,
       currentPassword: form.value.currentPassword || null,
@@ -374,7 +377,7 @@ function linkProviderRequest(provider: 'microsoft' | 'discord') {
       onSuccess: (page) => {
         const redirectTo = (page.props as any)?.flash?.oidcLinkRedirect
         if (typeof redirectTo === 'string' && redirectTo.length > 0) {
-          window.location.assign(redirectTo)
+          window.location.assign(appPath(redirectTo))
         }
       },
     }
@@ -386,7 +389,9 @@ function linkProvider(provider: 'microsoft' | 'discord') {
 }
 
 function oidcReauthHref(provider: 'microsoft' | 'discord') {
-  return `/auth/${provider}/redirect?intent=reauth&returnTo=${encodeURIComponent('/profile')}`
+  return appPath(
+    `/auth/${provider}/redirect?intent=reauth&returnTo=${encodeURIComponent('/profile')}`
+  )
 }
 
 async function startOidcReauth(provider: 'microsoft' | 'discord') {
@@ -404,7 +409,7 @@ function submit() {
 function resendEmailVerification() {
   resendingVerification.value = true
   router.post(
-    '/profile/email-verification/resend',
+    appPath('/profile/email-verification/resend'),
     {},
     {
       onFinish: () => {
@@ -417,7 +422,7 @@ function resendEmailVerification() {
 function resendIbanVerification() {
   resendingIbanVerification.value = true
   router.post(
-    '/profile/iban-verification/resend',
+    appPath('/profile/iban-verification/resend'),
     {},
     {
       onFinish: () => {
@@ -430,7 +435,7 @@ function resendIbanVerification() {
 function reauthSensitive() {
   reauthenticating.value = true
   router.post(
-    '/profile/reauth',
+    appPath('/profile/reauth'),
     { currentPassword: reauthPassword.value || null },
     {
       onSuccess: (page) => {
@@ -469,7 +474,7 @@ function changePassword() {
 function changePasswordRequest() {
   changingPassword.value = true
   router.put(
-    '/profile/password',
+    appPath('/profile/password'),
     {
       newPassword: passwordForm.value.newPassword,
       newPasswordConfirmation: passwordForm.value.newPasswordConfirmation,
@@ -494,7 +499,7 @@ function createToken() {
   if (!newTokenName.value.trim()) return
   creatingToken.value = true
   router.post(
-    '/profile/tokens',
+    appPath('/profile/tokens'),
     { name: newTokenName.value.trim(), expiresInDays: newTokenExpiresDays.value ?? undefined },
     {
       onFinish: () => {
@@ -507,7 +512,7 @@ function createToken() {
 }
 
 function revokeToken(tokenId: number) {
-  router.delete(`/profile/tokens/${tokenId}`, { preserveScroll: true })
+  router.delete(appPath(`/profile/tokens/${tokenId}`), { preserveScroll: true })
 }
 
 // Show-once new token dialog — driven by flash
@@ -968,7 +973,7 @@ onMounted(() => {
             </div>
             <a
               v-if="props.apiDocsEnabled"
-              href="/docs"
+              :href="appPath('/docs')"
               target="_blank"
               rel="noopener"
               data-testid="api-docs-link"

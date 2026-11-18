@@ -17,3 +17,7 @@ export function resolveBasePath(override?: string, appUrl?: string): string {
 export function prefixAppPath(basePath: string, url: string): string {
   return url.startsWith('/') && !url.startsWith('//') ? basePath + url : url
 }
+
+export function publicUrlAtBasePath(appUrl: string, basePath: string): string {
+  return new URL(appUrl).origin + basePath
+}

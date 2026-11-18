@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import AuditService from '#services/audit_service'
 import { DateTime } from 'luxon'
 import env from '#start/env'
+import { publicAppUrl } from '#config/base_path'
 import type User from '#models/user'
 import IbanChangeToken from '#models/iban_change_token'
 
@@ -12,10 +13,6 @@ export type IbanConsumeResult =
 export default class IbanChangeService {
   private tokenHash(token: string) {
     return createHash('sha256').update(token).digest('hex')
-  }
-
-  private appUrl() {
-    return env.get('APP_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
   }
 
   private ttlMinutes() {
@@ -42,7 +39,7 @@ export default class IbanChangeService {
 
     return {
       token,
-      verificationUrl: `${this.appUrl()}/profile/iban/verify/${rawToken}`,
+      verificationUrl: `${publicAppUrl()}/profile/iban/verify/${rawToken}`,
     }
   }
 

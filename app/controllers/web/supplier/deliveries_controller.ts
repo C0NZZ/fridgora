@@ -1,4 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import { listRedirectUrl } from '#helpers/list_redirect'
 import { resolvePage } from '#helpers/pagination'
 import DeliveryService from '#services/delivery_service'
 import type { DeliveryCorrectionErrorCode } from '#services/delivery_service'
@@ -12,19 +13,6 @@ import {
 import { normalizeImagePath } from '#helpers/image_url'
 import logger from '@adonisjs/core/services/logger'
 import type DeliveryCorrection from '#models/delivery_correction'
-
-function deliveryReturnUrl(request: HttpContext['request']): string {
-  const referer = request.header('referer') ?? ''
-  try {
-    const { pathname, search } = new URL(referer)
-    if (pathname === '/supplier/stock' || pathname === '/supplier/deliveries') {
-      return pathname + search
-    }
-  } catch {
-    // invalid URL — use fallback
-  }
-  return '/supplier/deliveries'
-}
 
 const CORRECTION_ERROR_MESSAGES: Record<DeliveryCorrectionErrorCode, string> = {
   DELIVERY_NOT_FOUND: 'messages.delivery_correction_not_found',
@@ -124,7 +112,9 @@ export default class DeliveriesController {
           amount: data.amount,
           price: data.price,
         })
-        return response.redirect(deliveryReturnUrl(request))
+        return response.redirect(
+          listRedirectUrl(request, '/supplier/deliveries', '/supplier/stock')
+        )
       }
     }
 
@@ -141,7 +131,7 @@ export default class DeliveriesController {
       message: i18n.t('messages.delivery_created', { amount: data.amount, price: data.price }),
     })
 
-    return response.redirect(deliveryReturnUrl(request))
+    return response.redirect(listRedirectUrl(request, '/supplier/deliveries', '/supplier/stock'))
   }
 
   async update(ctx: HttpContext) {
@@ -177,7 +167,7 @@ export default class DeliveriesController {
       this.flashCorrectionError(error, session, i18n)
     }
 
-    return response.redirect(deliveryReturnUrl(request))
+    return response.redirect(listRedirectUrl(request, '/supplier/deliveries', '/supplier/stock'))
   }
 
   async destroy(ctx: HttpContext) {
@@ -197,7 +187,7 @@ export default class DeliveriesController {
       this.flashCorrectionError(error, session, i18n)
     }
 
-    return response.redirect(deliveryReturnUrl(request))
+    return response.redirect(listRedirectUrl(request, '/supplier/deliveries', '/supplier/stock'))
   }
 
   /** An admin (not the supplier) changed the delivery — let the supplier know. */

@@ -11,6 +11,7 @@ import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 import app from '@adonisjs/core/services/app'
 import env from '#start/env'
+import { appPath, basePath, publicAppUrl } from '#config/base_path'
 import { extname, isAbsolute, relative, resolve } from 'node:path'
 import { access } from 'node:fs/promises'
 
@@ -556,6 +557,7 @@ if (env.get('SWAGGER_ENABLED')) {
       }
     }
     keepOnlyApiV1(spec)
+    if (basePath) spec.servers = [{ url: basePath }]
     // Fix `T | null` refs autoswagger's interface parser can't represent.
     normalizeNullableRefs(spec)
     // Inject the Entra oauth2 scheme from RUNTIME env (the pre-generated spec is
@@ -594,7 +596,7 @@ if (env.get('SWAGGER_ENABLED')) {
       // annotations are reused unchanged. Empty proxy URL keeps "Try it" requests
       // same-origin (our API) instead of routing them — and the Bearer token —
       // through Scalar's public CORS proxy.
-      let html = swagger.scalar(specPath, '')
+      let html = swagger.scalar(appPath(specPath), '')
       // Pin the renderer to a known-good version (autoswagger emits an unversioned CDN
       // URL). See SCALAR_PINNED_VERSION — newer Scalar duplicates the auth scheme entry.
       html = pinScalarCdnVersion(html)
@@ -603,7 +605,7 @@ if (env.get('SWAGGER_ENABLED')) {
       const scalarConfig = scalarAuthConfiguration(
         env.get('AUTH_PROVIDER_MICROSOFT_TENANT_ID'),
         env.get('AUTH_PROVIDER_MICROSOFT_CLIENT_ID'),
-        env.get('APP_URL')
+        env.get('APP_URL') ? publicAppUrl() : undefined
       )
       if (scalarConfig) {
         html = html.replace(

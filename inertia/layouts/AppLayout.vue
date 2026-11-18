@@ -4,6 +4,7 @@ import { Link, usePage, router } from '@inertiajs/vue3'
 import Toast from 'primevue/toast'
 import Button from 'primevue/button'
 import Menubar from 'primevue/menubar'
+import { useAppPath } from '~/composables/use_app_path'
 import { useFlash } from '~/composables/use_flash'
 import { useI18n } from '~/composables/use_i18n'
 import type { SharedProps } from '~/types'
@@ -12,6 +13,7 @@ useFlash()
 
 const page = usePage<SharedProps>()
 const { t } = useI18n()
+const appPath = useAppPath()
 const user = computed(() => page.props.user)
 const impersonation = computed(() => page.props.impersonation)
 const appName = computed(() => page.props.appName ?? 'Fridgora')
@@ -91,7 +93,7 @@ function isSubmenuActive(item: NavItem): boolean {
 function toggleColorMode() {
   localIsDark.value = !localIsDark.value
   router.post(
-    '/profile/color-mode',
+    appPath('/profile/color-mode'),
     { colorMode: localIsDark.value ? 'dark' : 'light' },
     { preserveScroll: true }
   )
@@ -100,19 +102,19 @@ function toggleColorMode() {
 // ─── Navigation ──────────────────────────────────────────────────────────────
 const menuItems = computed(() => {
   const items: NavItem[] = [
-    { label: t('common.nav_shop'), icon: 'pi pi-shopping-cart', url: '/shop' },
-    { label: t('common.nav_orders'), icon: 'pi pi-list', url: '/orders' },
-    { label: t('common.nav_invoices'), icon: 'pi pi-file', url: '/invoices' },
+    { label: t('common.nav_shop'), icon: 'pi pi-shopping-cart', url: appPath('/shop') },
+    { label: t('common.nav_orders'), icon: 'pi pi-list', url: appPath('/orders') },
+    { label: t('common.nav_invoices'), icon: 'pi pi-file', url: appPath('/invoices') },
     {
       label: t('common.nav_ratings'),
       icon: 'pi pi-star',
-      url: '/ratings',
+      url: appPath('/ratings'),
       compactIconOnly: true,
     },
     {
       label: t('common.nav_activity'),
       icon: 'pi pi-history',
-      url: '/audit',
+      url: appPath('/audit'),
       compactIconOnly: true,
     },
   ]
@@ -123,10 +125,18 @@ const menuItems = computed(() => {
       icon: 'pi pi-box',
       compactIconOnly: true,
       items: [
-        { label: t('common.nav_stock'), icon: 'pi pi-warehouse', url: '/supplier/stock' },
-        { label: t('common.nav_products'), icon: 'pi pi-tags', url: '/supplier/products' },
-        { label: t('common.nav_billing'), icon: 'pi pi-file-export', url: '/supplier/invoice' },
-        { label: t('common.nav_payments'), icon: 'pi pi-credit-card', url: '/supplier/payments' },
+        { label: t('common.nav_stock'), icon: 'pi pi-warehouse', url: appPath('/supplier/stock') },
+        { label: t('common.nav_products'), icon: 'pi pi-tags', url: appPath('/supplier/products') },
+        {
+          label: t('common.nav_billing'),
+          icon: 'pi pi-file-export',
+          url: appPath('/supplier/invoice'),
+        },
+        {
+          label: t('common.nav_payments'),
+          icon: 'pi pi-credit-card',
+          url: appPath('/supplier/payments'),
+        },
       ],
     })
   }
@@ -137,14 +147,26 @@ const menuItems = computed(() => {
       icon: 'pi pi-cog',
       compactIconOnly: true,
       items: [
-        { label: t('common.nav_dashboard'), icon: 'pi pi-chart-bar', url: '/admin/dashboard' },
-        { label: t('common.nav_users'), icon: 'pi pi-users', url: '/admin/users' },
-        { label: t('common.nav_categories'), icon: 'pi pi-palette', url: '/admin/categories' },
-        { label: t('common.nav_allergens'), icon: 'pi pi-tags', url: '/admin/allergens' },
-        { label: t('common.nav_music'), icon: 'pi pi-volume-up', url: '/admin/music' },
-        { label: t('common.nav_orders'), icon: 'pi pi-list-check', url: '/admin/orders' },
-        { label: t('common.nav_invoices'), icon: 'pi pi-file-check', url: '/admin/invoices' },
-        { label: t('common.nav_audit_log'), icon: 'pi pi-history', url: '/admin/audit' },
+        {
+          label: t('common.nav_dashboard'),
+          icon: 'pi pi-chart-bar',
+          url: appPath('/admin/dashboard'),
+        },
+        { label: t('common.nav_users'), icon: 'pi pi-users', url: appPath('/admin/users') },
+        {
+          label: t('common.nav_categories'),
+          icon: 'pi pi-palette',
+          url: appPath('/admin/categories'),
+        },
+        { label: t('common.nav_allergens'), icon: 'pi pi-tags', url: appPath('/admin/allergens') },
+        { label: t('common.nav_music'), icon: 'pi pi-volume-up', url: appPath('/admin/music') },
+        { label: t('common.nav_orders'), icon: 'pi pi-list-check', url: appPath('/admin/orders') },
+        {
+          label: t('common.nav_invoices'),
+          icon: 'pi pi-file-check',
+          url: appPath('/admin/invoices'),
+        },
+        { label: t('common.nav_audit_log'), icon: 'pi pi-history', url: appPath('/admin/audit') },
       ],
     })
   }
@@ -154,11 +176,11 @@ const menuItems = computed(() => {
 
 function logout() {
   // POST, not a plain navigation: signing out is a state change and must carry a CSRF token.
-  router.post('/logout')
+  router.post(appPath('/logout'))
 }
 
 function stopImpersonation() {
-  router.post('/impersonate/stop')
+  router.post(appPath('/impersonate/stop'))
 }
 
 const menubarBreakpoint = '960px'
@@ -216,7 +238,7 @@ onUnmounted(() => {
         }"
       >
         <template #start>
-          <Link href="/shop" class="sbf-brand-link mr-6 flex items-center gap-2">
+          <Link :href="appPath('/shop')" class="sbf-brand-link mr-6 flex items-center gap-2">
             <span class="sbf-brand text-xl font-bold tracking-tight"> {{ appName }} </span>
           </Link>
         </template>
@@ -267,7 +289,7 @@ onUnmounted(() => {
               @click="toggleColorMode"
             />
             <Link
-              href="/profile"
+              :href="appPath('/profile')"
               class="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
             >
               <span class="pi pi-user text-xs" />

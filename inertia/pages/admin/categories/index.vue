@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -14,6 +15,8 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import { useAppConfirm } from '~/composables/use_app_confirm'
 import { useI18n } from '~/composables/use_i18n'
 import { useInlineEdit } from '~/composables/use_inline_edit'
+
+const appPath = useAppPath()
 
 interface CategoryRow {
   id: number
@@ -37,7 +40,7 @@ function createCategory() {
   if (submitting.value || !newName.value.trim()) return
   submitting.value = true
   router.post(
-    '/admin/categories',
+    appPath('/admin/categories'),
     { name: newName.value.trim(), color: `#${newColor.value}` },
     {
       onFinish: () => {
@@ -51,7 +54,7 @@ function createCategory() {
 }
 
 function toggleDisabled(categoryId: number, isDisabled: boolean) {
-  router.put(`/admin/categories/${categoryId}`, { isDisabled }, { preserveState: true })
+  router.put(appPath(`/admin/categories/${categoryId}`), { isDisabled }, { preserveState: true })
 }
 
 const editName = ref('')
@@ -81,7 +84,7 @@ function deleteCategory(category: CategoryRow) {
     rejectLabel: t('common.cancel'),
     destructive: true,
     accept: () => {
-      router.delete(`/admin/categories/${category.id}`)
+      router.delete(appPath(`/admin/categories/${category.id}`))
     },
   })
 }

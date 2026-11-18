@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import Button from 'primevue/button'
 import { useI18n } from '~/composables/use_i18n'
+
+const appPath = useAppPath()
 
 defineProps<{ error: any }>()
 const { t } = useI18n()
@@ -15,6 +18,6 @@ const { t } = useI18n()
     <p class="mb-8 text-lg text-slate-500 dark:text-zinc-400">
       {{ error?.message || t('common.server_error') }}
     </p>
-    <Button as="a" href="/" :label="t('common.back_to_home')" icon="pi pi-home" />
+    <Button as="a" :href="appPath('/')" :label="t('common.back_to_home')" icon="pi pi-home" />
   </div>
 </template>

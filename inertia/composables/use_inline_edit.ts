@@ -1,5 +1,6 @@
 import { nextTick, ref } from 'vue'
 import { router } from '@inertiajs/vue3'
+import { useAppPath } from './use_app_path'
 
 /**
  * Handles the repeated inline-edit pattern in admin CRUD tables
@@ -35,6 +36,7 @@ export function useInlineEdit({
    */
   isValid?: () => boolean
 }) {
+  const appPath = useAppPath()
   const editingId = ref<number | null>(null)
 
   function getEditInputId(id: number) {
@@ -52,7 +54,7 @@ export function useInlineEdit({
   function saveEdit() {
     if (!editingId.value) return
     if (isValid && !isValid()) return
-    router.put(updatePath(editingId.value), getEditValues(), {
+    router.put(appPath(updatePath(editingId.value)), getEditValues(), {
       preserveState: true,
       onFinish: () => (editingId.value = null),
     })

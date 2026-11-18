@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -13,6 +14,8 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import { useAppConfirm } from '~/composables/use_app_confirm'
 import { useI18n } from '~/composables/use_i18n'
 import { useInlineEdit } from '~/composables/use_inline_edit'
+
+const appPath = useAppPath()
 
 interface AllergenRow {
   id: number
@@ -34,7 +37,7 @@ function createAllergen() {
   if (submitting.value || !newName.value.trim()) return
   submitting.value = true
   router.post(
-    '/admin/allergens',
+    appPath('/admin/allergens'),
     { name: newName.value.trim() },
     {
       onFinish: () => {
@@ -47,7 +50,7 @@ function createAllergen() {
 }
 
 function toggleDisabled(allergenId: number, isDisabled: boolean) {
-  router.put(`/admin/allergens/${allergenId}`, { isDisabled }, { preserveState: true })
+  router.put(appPath(`/admin/allergens/${allergenId}`), { isDisabled }, { preserveState: true })
 }
 
 const editName = ref('')
@@ -75,7 +78,7 @@ function deleteAllergen(allergen: AllergenRow) {
     rejectLabel: t('common.cancel'),
     destructive: true,
     accept: () => {
-      router.delete(`/admin/allergens/${allergen.id}`)
+      router.delete(appPath(`/admin/allergens/${allergen.id}`))
     },
   })
 }

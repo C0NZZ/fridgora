@@ -1,6 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
-import { appPath } from '#config/base_path'
 
 /**
  * Kiosk middleware redirects kiosk users to the kiosk interface.
@@ -11,7 +10,7 @@ export default class KioskMiddleware {
     const user = ctx.auth.user
 
     if (user?.isKiosk) {
-      return ctx.response.redirect(appPath('/kiosk'))
+      return ctx.response.redirect('/kiosk')
     }
 
     return next()

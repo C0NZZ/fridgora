@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -10,6 +11,8 @@ import Message from 'primevue/message'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useAppConfirm } from '~/composables/use_app_confirm'
 import { useI18n } from '~/composables/use_i18n'
+
+const appPath = useAppPath()
 
 interface UninvoicedGroup {
   buyerId: number
@@ -33,7 +36,7 @@ function generateInvoices() {
     acceptLabel: t('supplier.invoice_generate'),
     rejectLabel: t('common.cancel'),
     accept: () => {
-      router.post('/supplier/invoice/generate')
+      router.post(appPath('/supplier/invoice/generate'))
     },
   })
 }
@@ -55,7 +58,7 @@ function generateInvoiceForBuyer(
     acceptLabel: t('supplier.invoice_generate_for_buyer'),
     rejectLabel: t('common.cancel'),
     accept: () => {
-      router.post(`/supplier/invoice/generate/${buyerId}`)
+      router.post(appPath(`/supplier/invoice/generate/${buyerId}`))
     },
   })
 }

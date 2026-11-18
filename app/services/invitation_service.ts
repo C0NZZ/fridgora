@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
 import env from '#start/env'
+import { publicAppUrl } from '#config/base_path'
 import User from '#models/user'
 import UserInvitation from '#models/user_invitation'
 import KeypadIdService from '#services/keypad_id_service'
@@ -21,10 +22,6 @@ export default class InvitationService {
 
   private tokenHash(token: string) {
     return createHash('sha256').update(token).digest('hex')
-  }
-
-  private appUrl() {
-    return env.get('APP_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
   }
 
   private signPayload(payload: string) {
@@ -47,7 +44,7 @@ export default class InvitationService {
   }
 
   getInviteUrl(invitation: UserInvitation) {
-    return `${this.appUrl()}/register/invite/${this.signedToken(invitation)}`
+    return `${publicAppUrl()}/register/invite/${this.signedToken(invitation)}`
   }
 
   async createInvite(params: {

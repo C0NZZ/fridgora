@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
 import env from '#start/env'
+import { publicAppUrl } from '#config/base_path'
 import User from '#models/user'
 import PasswordResetToken from '#models/password_reset_token'
 import { DomainError } from '#services/domain_error'
@@ -14,10 +15,6 @@ export default class PasswordResetService {
 
   private tokenHash(token: string) {
     return createHash('sha256').update(token).digest('hex')
-  }
-
-  private appUrl() {
-    return env.get('APP_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
   }
 
   async createToken(emailInput: string) {
@@ -45,7 +42,7 @@ export default class PasswordResetService {
 
     return {
       email,
-      resetUrl: `${this.appUrl()}/reset-password/${rawToken}`,
+      resetUrl: `${publicAppUrl()}/reset-password/${rawToken}`,
     }
   }
 

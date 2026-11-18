@@ -1,5 +1,4 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import { appPath } from '#config/base_path'
 import db from '@adonisjs/lucid/services/db'
 import logger from '@adonisjs/core/services/logger'
 import { DateTime } from 'luxon'
@@ -20,7 +19,7 @@ export default class BootstrapController {
 
   async show({ inertia, response }: HttpContext) {
     if (await this.hasAnyAdmin()) {
-      return response.redirect(appPath('/login'))
+      return response.redirect('/login')
     }
 
     return inertia.render('auth/bootstrap', {
@@ -31,7 +30,7 @@ export default class BootstrapController {
 
   async store({ request, auth, response, session, i18n }: HttpContext) {
     if (await this.hasAnyAdmin()) {
-      return response.redirect(appPath('/login'))
+      return response.redirect('/login')
     }
 
     if (this.authModes.isLocalLoginDisabled()) {
@@ -39,7 +38,7 @@ export default class BootstrapController {
         type: 'danger',
         message: i18n.t('auth.bootstrap_local_disabled'),
       })
-      return response.redirect(appPath('/setup/bootstrap'))
+      return response.redirect('/setup/bootstrap')
     }
 
     const data = await request.validateUsing(bootstrapAdminValidator)
@@ -48,7 +47,7 @@ export default class BootstrapController {
         type: 'danger',
         message: i18n.t('auth.bootstrap_password_mismatch'),
       })
-      return response.redirect(appPath('/setup/bootstrap'))
+      return response.redirect('/setup/bootstrap')
     }
 
     // Allocation and insert share one transaction — the keypad-id advisory lock is
@@ -94,6 +93,6 @@ export default class BootstrapController {
       type: 'success',
       message: i18n.t('messages.bootstrap_admin_created'),
     })
-    return response.redirect(appPath('/shop'))
+    return response.redirect('/shop')
   }
 }

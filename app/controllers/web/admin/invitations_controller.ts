@@ -1,22 +1,11 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import { listRedirectUrl } from '#helpers/list_redirect'
 import logger from '@adonisjs/core/services/logger'
 import { createInviteValidator } from '#validators/auth'
 import AuditService from '#services/audit_service'
 import InvitationService from '#services/invitation_service'
 import NotificationService from '#services/notification_service'
 import { isDomainError } from '#services/domain_error'
-
-function usersUrl(request: HttpContext['request']): string {
-  const referer = request.header('referer') ?? ''
-  try {
-    const { pathname, search } = new URL(referer)
-    if (pathname === '/admin/users') return pathname + search
-  } catch {
-    // Ignore malformed referer and use fallback.
-  }
-
-  return '/admin/users'
-}
 
 export default class InvitationsController {
   private invitations = new InvitationService()
@@ -60,14 +49,14 @@ export default class InvitationsController {
         type: 'success',
         message: i18n.t('messages.invite_created', { email: invitation.email }),
       })
-      return response.redirect(usersUrl(request))
+      return response.redirect(listRedirectUrl(request, '/admin/users'))
     } catch (error) {
       if (isDomainError(error, 'EMAIL_ALREADY_REGISTERED')) {
         session.flash('alert', {
           type: 'danger',
           message: i18n.t('messages.invite_email_already_registered'),
         })
-        return response.redirect(usersUrl(request))
+        return response.redirect(listRedirectUrl(request, '/admin/users'))
       }
       throw error
     }
@@ -91,6 +80,6 @@ export default class InvitationsController {
       type: 'success',
       message: i18n.t('messages.invite_revoked', { email: invite.email }),
     })
-    return response.redirect(usersUrl(request))
+    return response.redirect(listRedirectUrl(request, '/admin/users'))
   }
 }

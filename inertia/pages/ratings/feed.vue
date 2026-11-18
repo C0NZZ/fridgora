@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { computed, ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -19,6 +20,8 @@ import {
 } from '~/composables/use_rating_form_validation'
 import FilterBar from '~/components/FilterBar.vue'
 import PaginatedDataTable from '~/components/PaginatedDataTable.vue'
+
+const appPath = useAppPath()
 
 type RatingRow = {
   id: number
@@ -139,7 +142,7 @@ function onSort(event: any) {
 
 function toggleUpvote(row: RatingRow) {
   router.post(
-    `/ratings/${row.id}/upvote`,
+    appPath(`/ratings/${row.id}/upvote`),
     {},
     { preserveScroll: true, only: ['ratings', 'filters', 'flash'] }
   )
@@ -195,9 +198,9 @@ function submitRating() {
     },
   }
   if (rateEditingId.value) {
-    router.put(`/ratings/${rateEditingId.value}`, payload, options)
+    router.put(appPath(`/ratings/${rateEditingId.value}`), payload, options)
   } else {
-    router.post('/ratings', payload, options)
+    router.post(appPath('/ratings'), payload, options)
   }
 }
 
@@ -214,7 +217,7 @@ function openDeleteDialog(row: RatingRow) {
 function confirmDeleteRating() {
   if (!deleteTargetRating.value) return
   deleteSubmitting.value = true
-  router.delete(`/ratings/${deleteTargetRating.value.id}`, {
+  router.delete(appPath(`/ratings/${deleteTargetRating.value.id}`), {
     preserveScroll: true,
     only: ['ratings', 'unrated', 'filters', 'flash'],
     onFinish: () => {

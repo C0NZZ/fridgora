@@ -4,6 +4,7 @@ import { DateTime } from 'luxon'
 import User from '#models/user'
 import EmailVerificationToken from '#models/email_verification_token'
 import env from '#start/env'
+import { publicAppUrl } from '#config/base_path'
 
 export type EmailVerificationConsumeResult =
   | { ok: true; user: User; action: 'verified_current' | 'applied_pending' }
@@ -12,10 +13,6 @@ export type EmailVerificationConsumeResult =
 export default class EmailVerificationService {
   private tokenHash(token: string) {
     return createHash('sha256').update(token).digest('hex')
-  }
-
-  private appUrl() {
-    return env.get('APP_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
   }
 
   private ttlMinutes() {
@@ -55,7 +52,7 @@ export default class EmailVerificationService {
 
     return {
       token,
-      verificationUrl: `${this.appUrl()}/email/verify/${rawToken}`,
+      verificationUrl: `${publicAppUrl()}/email/verify/${rawToken}`,
     }
   }
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed, onMounted } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -14,6 +15,8 @@ import { useListFilters } from '~/composables/use_list_filters'
 import { useSelectEnterKey } from '~/composables/use_select_enter_key'
 import FilterBar from '~/components/FilterBar.vue'
 import PaginatedDataTable from '~/components/PaginatedDataTable.vue'
+
+const appPath = useAppPath()
 
 interface InvoiceRow {
   id: number
@@ -104,11 +107,11 @@ onMounted(() => {
 // action; preserveScroll keeps the viewport where the supplier was working instead of
 // jumping back to the top of the list.
 function approve(id: number) {
-  router.post(`/supplier/payments/${id}`, { action: 'approve' }, { preserveScroll: true })
+  router.post(appPath(`/supplier/payments/${id}`), { action: 'approve' }, { preserveScroll: true })
 }
 
 function reject(id: number) {
-  router.post(`/supplier/payments/${id}`, { action: 'reject' }, { preserveScroll: true })
+  router.post(appPath(`/supplier/payments/${id}`), { action: 'reject' }, { preserveScroll: true })
 }
 
 function buildFilterParams() {

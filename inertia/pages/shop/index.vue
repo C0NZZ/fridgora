@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { Head, router, usePage } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -8,6 +9,8 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import Dialog from 'primevue/dialog'
 import { useAppConfirm } from '~/composables/use_app_confirm'
 import { useI18n } from '~/composables/use_i18n'
+
+const appPath = useAppPath()
 
 interface ShopProduct {
   id: number
@@ -134,7 +137,7 @@ function purchase(product: ShopProduct) {
     acceptLabel: t('shop.confirm_accept'),
     rejectLabel: t('common.cancel'),
     accept: () => {
-      router.post('/shop/purchase', {
+      router.post(appPath('/shop/purchase'), {
         deliveryId: product.deliveryId,
         // The price the buyer just confirmed — the server refuses if it no longer holds.
         expectedPrice: product.price,
@@ -169,7 +172,7 @@ function buyAtNewPrice() {
   if (!priceChange.value || priceChangeSubmitting.value) return
   priceChangeSubmitting.value = true
   router.post(
-    '/shop/purchase',
+    appPath('/shop/purchase'),
     { deliveryId: priceChange.value.deliveryId, expectedPrice: priceChange.value.price },
     {
       onFinish: () => {
@@ -181,7 +184,7 @@ function buyAtNewPrice() {
 }
 
 function toggleFavorite(productId: number) {
-  router.post(`/profile/favorites/${productId}`, {}, { preserveScroll: true })
+  router.post(appPath(`/profile/favorites/${productId}`), {}, { preserveScroll: true })
 }
 
 function nameClass(name: string): string {
@@ -324,7 +327,7 @@ function categoryButtonStyle(isSelected: boolean, color?: string): Record<string
             >
               <img
                 v-if="product.imagePath"
-                :src="product.imagePath"
+                :src="appPath(product.imagePath)"
                 :alt="product.displayName"
                 class="h-full w-full object-contain"
                 loading="lazy"

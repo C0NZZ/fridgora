@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { Head, useForm, usePage } from '@inertiajs/vue3'
 import GuestLayout from '~/layouts/GuestLayout.vue'
 import Card from 'primevue/card'
@@ -9,6 +10,8 @@ import { computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from '~/composables/use_i18n'
 import type { SharedProps } from '~/types'
+
+const appPath = useAppPath()
 
 const { t } = useI18n()
 const toast = useToast()
@@ -32,7 +35,7 @@ const submitDisabled = computed(
 )
 
 function submit() {
-  form.post('/forgot-password', {
+  form.post(appPath('/forgot-password'), {
     onError: (errors) => {
       toast.add({
         severity: 'error',
@@ -85,7 +88,7 @@ function submit() {
           />
 
           <div class="text-sm">
-            <a href="/login" class="text-zinc-300 hover:text-zinc-100">
+            <a :href="appPath('/login')" class="text-zinc-300 hover:text-zinc-100">
               {{ t('auth.back_to_login_link') }}
             </a>
           </div>

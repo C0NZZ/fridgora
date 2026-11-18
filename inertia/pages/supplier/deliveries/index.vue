@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed, watch } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -13,6 +14,8 @@ import FilterBar from '~/components/FilterBar.vue'
 import PaginatedDataTable from '~/components/PaginatedDataTable.vue'
 import DeliveryCorrectionDialog from '~/components/DeliveryCorrectionDialog.vue'
 import type { CorrectableDelivery } from '~/components/DeliveryCorrectionDialog.vue'
+
+const appPath = useAppPath()
 
 interface ProductOption {
   id: number
@@ -163,7 +166,7 @@ watch(
         :label="t('supplier.deliveries_open_inventory')"
         icon="pi pi-warehouse"
         size="small"
-        @click="router.get('/supplier/stock')"
+        @click="router.get(appPath('/supplier/stock'))"
       />
     </div>
 

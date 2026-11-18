@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -11,6 +12,8 @@ import { useI18n } from '~/composables/use_i18n'
 import { useListFilters } from '~/composables/use_list_filters'
 import FilterBar from '~/components/FilterBar.vue'
 import PaginatedDataTable from '~/components/PaginatedDataTable.vue'
+
+const appPath = useAppPath()
 
 interface ProductRow {
   id: number
@@ -86,7 +89,7 @@ function formatAllergenList(allergens: ProductRow['allergens']) {
         :label="t('supplier.products_new_title')"
         icon="pi pi-plus"
         size="small"
-        @click="router.get('/supplier/products/new')"
+        @click="router.get(appPath('/supplier/products/new'))"
       />
     </div>
 
@@ -123,7 +126,7 @@ function formatAllergenList(allergens: ProductRow['allergens']) {
           >
             <img
               v-if="data.imagePath"
-              :src="data.imagePath"
+              :src="appPath(data.imagePath)"
               :alt="data.displayName"
               class="h-full w-full rounded object-contain"
             />
@@ -163,7 +166,7 @@ function formatAllergenList(allergens: ProductRow['allergens']) {
             size="small"
             severity="secondary"
             text
-            @click="router.get(`/supplier/products/${data.id}/edit`)"
+            @click="router.get(appPath(`/supplier/products/${data.id}/edit`))"
           />
         </template>
       </Column>

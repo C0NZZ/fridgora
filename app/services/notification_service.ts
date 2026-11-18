@@ -2,6 +2,7 @@ import mail from '@adonisjs/mail/services/main'
 import router from '@adonisjs/core/services/router'
 import i18nManager from '@adonisjs/i18n/services/main'
 import env from '#start/env'
+import { publicAppUrl } from '#config/base_path'
 import type { DateTime } from 'luxon'
 import User from '#models/user'
 import Order from '#models/order'
@@ -17,7 +18,7 @@ export default class NotificationService {
   }
 
   private get appUrl() {
-    return env.get('APP_URL') || `http://${env.get('HOST')}:${env.get('PORT')}`
+    return publicAppUrl()
   }
 
   private get appName() {

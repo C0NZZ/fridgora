@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed, watch } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
 import Dialog from 'primevue/dialog'
@@ -12,6 +13,8 @@ import {
   DELIVERY_MAX_PRICE,
   type DeliveryCorrectionFormState,
 } from '~/composables/use_delivery_correction_validation'
+
+const appPath = useAppPath()
 
 export interface CorrectableDelivery {
   id: number
@@ -169,7 +172,7 @@ function submit() {
   if (isVoid.value) {
     if (!voidValid.value) return
     submitting.value = true
-    router.delete(`/supplier/deliveries/${props.delivery.id}`, {
+    router.delete(appPath(`/supplier/deliveries/${props.delivery.id}`), {
       data: { reason: form.value.reason.trim() },
       preserveScroll: true,
       onSuccess: (response) => closeUnlessRefused(response.props),
@@ -183,7 +186,7 @@ function submit() {
   if (!isValid.value) return
   submitting.value = true
   router.put(
-    `/supplier/deliveries/${props.delivery.id}`,
+    appPath(`/supplier/deliveries/${props.delivery.id}`),
     {
       amount: form.value.amount,
       price: form.value.price,

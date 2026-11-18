@@ -45,12 +45,12 @@ or use the provided `compose.yaml` with `${VAR}` substitution.
 docker compose up -d
 ```
 
-### Serve the Docker kiosk under a subpath
+### Serve the Docker app under a subpath
 
 Set `APP_URL=https://domain.com/fridgora` in the Compose `.env`. Fridgora uses the path
-from this URL at startup, so the same Docker image can serve the kiosk at
-`https://domain.com/fridgora/kiosk`. Set `APP_BASE_PATH=/fridgora` if you need
-to override the mount path. Nested paths such as `/office/fridgora` also work.
+from this URL at startup. Open `https://domain.com/fridgora/` for the web app or
+`https://domain.com/fridgora/kiosk` for the kiosk. Set `APP_BASE_PATH=/fridgora` if
+you need to override the mount path. Nested paths such as `/office/fridgora` also work.
 
 In your HTTPS Nginx server block, forward the entire path to the Docker app.
 This example assumes Nginx and the Compose `app` service share a Docker network.
@@ -72,6 +72,19 @@ location /fridgora/ {
 ```
 
 Both `proxy_pass` directives omit a trailing slash so Nginx forwards the mount path.
+
+For Caddy, use a `handle` block with a path matcher that covers the mount and its descendants.
+
+```caddyfile
+@fridgora path /fridgora /fridgora/*
+handle @fridgora {
+    reverse_proxy app:3000
+}
+```
+
+If you use Microsoft or Discord sign-in, register the callback URL with the mount path,
+for example `https://domain.com/fridgora/auth/microsoft/callback`. Any explicit callback
+URL in Compose should match the URL registered with the provider.
 
 ---
 

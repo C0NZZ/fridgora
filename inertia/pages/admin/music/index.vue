@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { computed, ref } from 'vue'
 import { Head, router, useForm } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -13,6 +14,8 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import { useAppConfirm } from '~/composables/use_app_confirm'
 import { useI18n } from '~/composables/use_i18n'
 import { useInlineEdit } from '~/composables/use_inline_edit'
+
+const appPath = useAppPath()
 
 interface TrackRow {
   id: number
@@ -82,7 +85,7 @@ function onFileChange(event: Event) {
 
 function createTrack() {
   if (createDisabled.value) return
-  createForm.post('/admin/music', {
+  createForm.post(appPath('/admin/music'), {
     forceFormData: true,
     onSuccess: () => {
       showCreateDialog.value = false
@@ -93,11 +96,11 @@ function createTrack() {
 }
 
 function toggleDisabled(trackId: number, isDisabled: boolean) {
-  router.put(`/admin/music/${trackId}`, { isDisabled }, { preserveState: true })
+  router.put(appPath(`/admin/music/${trackId}`), { isDisabled }, { preserveState: true })
 }
 
 function updateAccessLevel(trackId: number, accessLevel: 'public' | 'premium') {
-  router.put(`/admin/music/${trackId}`, { accessLevel }, { preserveState: true })
+  router.put(appPath(`/admin/music/${trackId}`), { accessLevel }, { preserveState: true })
 }
 
 const editName = ref('')
@@ -125,7 +128,7 @@ function deleteTrack(track: TrackRow) {
     rejectLabel: t('common.cancel'),
     destructive: true,
     accept: () => {
-      router.delete(`/admin/music/${track.id}`)
+      router.delete(appPath(`/admin/music/${track.id}`))
     },
   })
 }

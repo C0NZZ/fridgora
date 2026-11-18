@@ -216,13 +216,13 @@ export default class KioskController {
         : Number(rawExpectedPrice)
 
     if (!customerId || !deliveryId) {
-      return response.redirect(appPath('/kiosk'))
+      return response.redirect('/kiosk')
     }
 
     // The customer id comes from the request, so re-check the target is a live account.
     const customer = await User.query().where('id', customerId).where('isDisabled', false).first()
     if (!customer) {
-      return response.redirect(appPath('/kiosk'))
+      return response.redirect('/kiosk')
     }
 
     const orderService = new OrderService()
@@ -240,12 +240,10 @@ export default class KioskController {
         logger.error({ err }, 'Failed to send purchase confirmation email')
       })
 
-      return response.redirect(appPath(`/kiosk/shop?keypadId=${customer.keypadId ?? ''}&success=1`))
+      return response.redirect(`/kiosk/shop?keypadId=${customer.keypadId ?? ''}&success=1`)
     } catch (error) {
       const code = error instanceof PriceChangedError ? 'price_changed' : 'out_of_stock'
-      return response.redirect(
-        appPath(`/kiosk/shop?keypadId=${customer.keypadId ?? ''}&error=${code}`)
-      )
+      return response.redirect(`/kiosk/shop?keypadId=${customer.keypadId ?? ''}&error=${code}`)
     }
   }
 }

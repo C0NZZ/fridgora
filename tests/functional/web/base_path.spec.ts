@@ -5,7 +5,7 @@ import { once } from 'node:events'
 import { createServer, type AddressInfo } from 'node:net'
 import { getTestRuntimeEnv } from '#tests/utils/test_db'
 
-test('serves only the configured mount and keeps kiosk redirects under it', async ({
+test('serves application routes and redirects under the configured mount', async ({
   assert,
   cleanup,
 }) => {
@@ -25,6 +25,9 @@ test('serves only the configured mount and keeps kiosk redirects under it', asyn
       PORT: String(port),
       APP_URL: origin,
       APP_BASE_PATH: '/office/fridgora/',
+      AUTH_PROVIDERS: 'local,microsoft',
+      AUTH_PROVIDER_MICROSOFT_CLIENT_ID: 'mounted-test-client',
+      AUTH_PROVIDER_MICROSOFT_CLIENT_SECRET: 'mounted-test-secret',
     }),
   })
   cleanup(async () => {
@@ -52,6 +55,20 @@ test('serves only the configured mount and keeps kiosk redirects under it', asyn
   const kiosk = await request('/office/fridgora/kiosk', { Accept: 'text/html' })
   assert.equal(kiosk.status, 302)
   assert.equal(kiosk.headers.get('location')?.split('?')[0], '/office/fridgora/login')
+
+  const invalidVerification = await request('/office/fridgora/email/verify/invalid')
+  assert.equal(invalidVerification.status, 302)
+  assert.equal(invalidVerification.headers.get('location'), '/office/fridgora/login')
+
+  const signIn = await request('/office/fridgora/auth/microsoft/redirect')
+  assert.equal(signIn.status, 302)
+  const providerUrl = new URL(signIn.headers.get('location')!)
+  assert.equal(providerUrl.origin, 'https://login.microsoftonline.com')
+  assert.equal(
+    providerUrl.searchParams.get('redirect_uri'),
+    `${origin}/office/fridgora/auth/microsoft/callback`
+  )
+
   const unmounted = await request('/kiosk')
   const similarPath = await request('/office/fridgora-other/kiosk')
   const tone = await request('/office/fridgora/keypad/1.wav')

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 /**
  * Barcode input with an Open Food Facts lookup right next to it: the supplier usually has
  * the product in hand, so the barcode is where a new product starts. The page fills the
@@ -11,6 +12,8 @@ import InputGroup from 'primevue/inputgroup'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import { useI18n } from '~/composables/use_i18n'
+
+const appPath = useAppPath()
 
 interface Candidate {
   url: string
@@ -61,7 +64,9 @@ async function search() {
   loading.value = true
   try {
     const response = await fetch(
-      `/supplier/products/image/candidates?barcode=${encodeURIComponent(model.value.trim())}`,
+      appPath(
+        `/supplier/products/image/candidates?barcode=${encodeURIComponent(model.value.trim())}`
+      ),
       { headers: { Accept: 'application/json' }, credentials: 'same-origin' }
     )
     const body = response.ok
@@ -179,7 +184,11 @@ function onEnter() {
           :aria-pressed="picked === candidate.url"
           @click="pick(candidate)"
         >
-          <img :src="candidate.thumbUrl" alt="" class="h-full w-full rounded object-contain" />
+          <img
+            :src="appPath(candidate.thumbUrl)"
+            alt=""
+            class="h-full w-full rounded object-contain"
+          />
         </Button>
       </div>
       <Message v-else-if="known" severity="secondary" size="small">{{

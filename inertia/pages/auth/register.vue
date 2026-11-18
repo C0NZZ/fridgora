@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { Head, useForm, usePage } from '@inertiajs/vue3'
 import GuestLayout from '~/layouts/GuestLayout.vue'
 import Card from 'primevue/card'
@@ -10,6 +11,8 @@ import { computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from '~/composables/use_i18n'
 import type { SharedProps } from '~/types'
+
+const appPath = useAppPath()
 
 const { t } = useI18n()
 const toast = useToast()
@@ -61,7 +64,7 @@ const firstErrorMessage = computed(
 )
 
 function submit() {
-  form.post('/register', {
+  form.post(appPath('/register'), {
     onError: (errors) => {
       const firstError =
         errors.displayName ||
@@ -172,7 +175,7 @@ function submit() {
           />
 
           <div class="text-sm">
-            <a href="/login" class="text-zinc-300 hover:text-zinc-100">
+            <a :href="appPath('/login')" class="text-zinc-300 hover:text-zinc-100">
               {{ t('auth.login_instead_link') }}
             </a>
           </div>

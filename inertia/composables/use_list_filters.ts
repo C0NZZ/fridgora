@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { areFilterParamsEqual, type FilterParams } from './use_filter_params'
+import { useAppPath } from './use_app_path'
 
 interface UseListFiltersOptions {
   route: string
@@ -30,6 +31,8 @@ export function useListFilters({
   buildParams,
   getCurrentPage,
 }: UseListFiltersOptions) {
+  const appPath = useAppPath()
+  const url = () => appPath(route)
   const routerOpts = { preserveState: true as const, only: onlyProps }
   const lastAppliedFilterParams = ref(buildParams())
 
@@ -38,7 +41,7 @@ export function useListFilters({
     const page = areFilterParamsEqual(nextParams, lastAppliedFilterParams.value)
       ? getCurrentPage()
       : 1
-    router.get(route, { ...nextParams, page }, routerOpts)
+    router.get(url(), { ...nextParams, page }, routerOpts)
     lastAppliedFilterParams.value = nextParams
   }
 
@@ -46,16 +49,16 @@ export function useListFilters({
   function navigateClear() {
     const params = buildParams()
     lastAppliedFilterParams.value = params
-    router.get(route, params, routerOpts)
+    router.get(url(), params, routerOpts)
   }
 
   function onPageChange(event: { page: number }) {
-    router.get(route, { ...buildParams(), page: event.page + 1 }, routerOpts)
+    router.get(url(), { ...buildParams(), page: event.page + 1 }, routerOpts)
   }
 
   /** Call AFTER updating your own sort refs — reads their current (updated) values. */
   function navigateSort() {
-    router.get(route, { ...buildParams(), page: 1 }, routerOpts)
+    router.get(url(), { ...buildParams(), page: 1 }, routerOpts)
   }
 
   return { applyFilters, navigateClear, onPageChange, navigateSort }

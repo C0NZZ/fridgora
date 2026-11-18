@@ -1,6 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
-import { basePath } from '#config/base_path'
+import { appPath, basePath } from '#config/base_path'
 
 export default class BasePathMiddleware {
   async handle({ request, response }: HttpContext, next: NextFn) {
@@ -25,6 +25,10 @@ export default class BasePathMiddleware {
     // Adonis matches the parsed path. Its static middleware uses the native request URL.
     request.parsedUrl.pathname = path.slice(basePath.length)
     request.request.url = rawUrl.slice(basePath.length)
+
+    // Redirects from controllers, auth, and validation share this response method.
+    const location = response.location.bind(response)
+    response.location = (url) => location(appPath(url))
     return next()
   }
 }

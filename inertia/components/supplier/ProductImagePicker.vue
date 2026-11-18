@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 /**
  * The product image as one tile: the preview is also where a picture is dropped, pasted
  * or chosen, and the few adjustments live right under it. What the tile shows is what
@@ -12,6 +13,8 @@ import SelectButton from 'primevue/selectbutton'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import { useI18n } from '~/composables/use_i18n'
+
+const appPath = useAppPath()
 
 export interface ProductImageCapabilities {
   backgrounds: string[]
@@ -145,7 +148,7 @@ async function run() {
   error.value = ''
   emit('busy', true)
   try {
-    const response = await fetch('/supplier/products/image/process', {
+    const response = await fetch(appPath('/supplier/products/image/process'), {
       method: 'POST',
       body,
       credentials: 'same-origin',
@@ -296,7 +299,7 @@ onUnmounted(() => {
     >
       <img
         v-if="displayUrl"
-        :src="displayUrl"
+        :src="appPath(displayUrl)"
         :alt="alt"
         class="h-full w-full object-contain"
         data-testid="product-image-preview"

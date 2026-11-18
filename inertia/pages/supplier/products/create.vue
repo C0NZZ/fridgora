@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { computed, reactive, ref, watch } from 'vue'
 import { Head, router, useForm } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -17,6 +18,8 @@ import ProductImagePicker, {
 import ProductBarcodeField from '~/components/supplier/ProductBarcodeField.vue'
 import ProductOffContribution from '~/components/supplier/ProductOffContribution.vue'
 import { useProductSuggestions } from '~/composables/use_product_suggestions'
+
+const appPath = useAppPath()
 
 interface CategoryOption {
   id: number
@@ -184,7 +187,7 @@ function submit() {
       ...offFields(data),
       allergenIds: JSON.stringify(data.allergenIds),
     }))
-    .post('/supplier/products', {
+    .post(appPath('/supplier/products'), {
       forceFormData: true,
       onFinish: () => {
         form.transform((data) => data)
@@ -197,7 +200,7 @@ function goBack() {
     window.history.back()
     return
   }
-  router.get('/supplier/products')
+  router.get(appPath('/supplier/products'))
 }
 
 // The supplier usually has the product in hand: start at the barcode (a scanner types it

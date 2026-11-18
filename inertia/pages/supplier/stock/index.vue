@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -20,6 +21,8 @@ import {
   DELIVERY_MAX_PRICE,
 } from '~/composables/use_delivery_correction_validation'
 import PaginatedDataTable from '~/components/PaginatedDataTable.vue'
+
+const appPath = useAppPath()
 
 interface StockRow {
   productId: number
@@ -244,7 +247,7 @@ function clearFilters() {
 
 function onPageChange(event: any) {
   router.get(
-    '/supplier/stock',
+    appPath('/supplier/stock'),
     { ...buildFilterParams(), page: event.page + 1 },
     { preserveState: true, only: ['stock', 'filters'] }
   )
@@ -254,7 +257,7 @@ function onSort(event: any) {
   filterSortBy.value = event.sortField
   filterSortOrder.value = event.sortOrder === 1 ? 'asc' : 'desc'
   router.get(
-    '/supplier/stock',
+    appPath('/supplier/stock'),
     {
       ...buildFilterParams(),
       sortBy: event.sortField,
@@ -322,7 +325,7 @@ function submitQuickDelivery(confirmWarnings = false) {
 
   submitting.value = true
   router.post(
-    '/supplier/deliveries',
+    appPath('/supplier/deliveries'),
     {
       productId: selectedProduct.value,
       amount: amount.value,
@@ -399,10 +402,10 @@ function stockSeverity(remaining: number): 'success' | 'warn' | 'danger' {
         {{ t('supplier.stock_heading') }}
       </h1>
       <div class="flex gap-2">
-        <Link href="/supplier/products/new">
+        <Link :href="appPath('/supplier/products/new')">
           <Button :label="t('supplier.stock_new_product')" icon="pi pi-plus" size="small" />
         </Link>
-        <Link href="/supplier/deliveries">
+        <Link :href="appPath('/supplier/deliveries')">
           <Button
             :label="t('supplier.stock_delivery_history')"
             icon="pi pi-box"
@@ -834,7 +837,7 @@ function stockSeverity(remaining: number): 'success' | 'warn' | 'danger' {
             >
               <img
                 v-if="data.imagePath"
-                :src="data.imagePath"
+                :src="appPath(data.imagePath)"
                 :alt="data.productName"
                 class="h-full w-full rounded object-contain"
               />
@@ -882,7 +885,7 @@ function stockSeverity(remaining: number): 'success' | 'warn' | 'danger' {
       <Column :header="t('common.actions')" style="width: 130px">
         <template #body="{ data }">
           <div class="flex gap-1">
-            <Link :href="`/supplier/stock?preselect=${data.productId}`">
+            <Link :href="appPath(`/supplier/stock?preselect=${data.productId}`)">
               <Button
                 icon="pi pi-box"
                 :aria-label="t('supplier.deliveries_submit')"
@@ -891,7 +894,7 @@ function stockSeverity(remaining: number): 'success' | 'warn' | 'danger' {
                 text
               />
             </Link>
-            <Link :href="`/supplier/products/${data.productId}/edit`">
+            <Link :href="appPath(`/supplier/products/${data.productId}/edit`)">
               <Button
                 icon="pi pi-pencil"
                 :aria-label="t('common.edit')"

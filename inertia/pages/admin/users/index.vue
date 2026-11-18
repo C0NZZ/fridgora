@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed } from 'vue'
 import { Head, router, useForm, usePage } from '@inertiajs/vue3'
 import AppLayout from '~/layouts/AppLayout.vue'
@@ -19,6 +20,8 @@ import { useSelectEnterKey } from '~/composables/use_select_enter_key'
 import FilterBar from '~/components/FilterBar.vue'
 import PaginatedDataTable from '~/components/PaginatedDataTable.vue'
 import type { SharedProps } from '~/types'
+
+const appPath = useAppPath()
 
 interface UserRow {
   id: number
@@ -132,11 +135,11 @@ const { applyFilters, navigateClear, onPageChange, navigateSort } = useListFilte
 })
 
 function updateRole(userId: number, role: string) {
-  router.put(`/admin/users/${userId}`, { role }, { preserveState: true })
+  router.put(appPath(`/admin/users/${userId}`), { role }, { preserveState: true })
 }
 
 function toggleDisabled(userId: number, isDisabled: boolean) {
-  router.put(`/admin/users/${userId}`, { isDisabled }, { preserveState: true })
+  router.put(appPath(`/admin/users/${userId}`), { isDisabled }, { preserveState: true })
 }
 
 function generateInvoiceForUser(userId: number, displayName: string) {
@@ -147,20 +150,20 @@ function generateInvoiceForUser(userId: number, displayName: string) {
     acceptLabel: t('admin.users_generate_invoice'),
     rejectLabel: t('common.cancel'),
     accept: () => {
-      router.post(`/admin/users/${userId}/generate-invoice`)
+      router.post(appPath(`/admin/users/${userId}/generate-invoice`))
     },
   })
 }
 
 function toggleKiosk(userId: number, isKiosk: boolean) {
-  router.put(`/admin/users/${userId}`, { isKiosk }, { preserveState: true })
+  router.put(appPath(`/admin/users/${userId}`), { isKiosk }, { preserveState: true })
 }
 
 function commitKeypadId(user: UserRow, nextValue: number | null) {
   if (nextValue === null || !Number.isInteger(nextValue) || nextValue <= 0) return
   if (nextValue === user.keypadId) return
   router.put(
-    `/admin/users/${user.id}`,
+    appPath(`/admin/users/${user.id}`),
     { keypadId: nextValue },
     { preserveState: true, preserveScroll: true }
   )
@@ -182,7 +185,7 @@ function onSort(event: any) {
 }
 
 function impersonateUser(userId: number) {
-  router.post(`/admin/users/${userId}/impersonate`)
+  router.post(appPath(`/admin/users/${userId}/impersonate`))
 }
 
 const inviteForm = useForm({
@@ -197,7 +200,7 @@ const inviteEmailInvalid = computed(() => {
 function createInvite() {
   if (!inviteForm.email.trim() || inviteEmailInvalid.value) return
 
-  inviteForm.post('/admin/invitations', {
+  inviteForm.post(appPath('/admin/invitations'), {
     preserveScroll: true,
     onError: (errors) => {
       toast.add({
@@ -214,7 +217,7 @@ function createInvite() {
 }
 
 function revokeInvite(inviteId: number) {
-  router.post(`/admin/invitations/${inviteId}/revoke`, {}, { preserveScroll: true })
+  router.post(appPath(`/admin/invitations/${inviteId}/revoke`), {}, { preserveScroll: true })
 }
 
 async function copyInviteLink(invite: InviteRow) {
@@ -224,7 +227,7 @@ async function copyInviteLink(invite: InviteRow) {
 
 function changeInvitePage(page: number) {
   router.get(
-    '/admin/users',
+    appPath('/admin/users'),
     {
       ...buildFilterParams(),
       // ...and keep the user-list cursor when the invitations list moves.
@@ -530,7 +533,7 @@ function changeInvitePage(page: number) {
               size="small"
               text
               :aria-label="t('admin.users_send_password_reset')"
-              @click="router.post(`/admin/users/${data.id}/send-password-reset`)"
+              @click="router.post(appPath(`/admin/users/${data.id}/send-password-reset`))"
             />
             <Button
               v-if="

@@ -1,6 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
-import { appPath } from '#config/base_path'
 import type { Authenticators } from '@adonisjs/auth/types'
 
 /**
@@ -11,7 +10,7 @@ export default class AuthMiddleware {
   /**
    * The URL to redirect to, when authentication fails
    */
-  redirectTo = appPath('/login')
+  redirectTo = '/login'
 
   async handle(
     ctx: HttpContext,

@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import GuestLayout from '~/layouts/GuestLayout.vue'
 import Button from 'primevue/button'
 import { useI18n } from '~/composables/use_i18n'
+
+const appPath = useAppPath()
 
 const props = defineProps<{
   blocked?: 'impersonating'
@@ -35,7 +38,7 @@ const capabilities = computed(() => {
 function decide(decision: 'approve' | 'deny') {
   submitting.value = decision
   router.post(
-    '/oauth/authorize',
+    appPath('/oauth/authorize'),
     { decision },
     {
       onFinish: () => {
@@ -47,7 +50,7 @@ function decide(decision: 'approve' | 'deny') {
 
 function stopImpersonation() {
   submitting.value = 'stop'
-  router.post('/impersonate/stop', {}, { onFinish: () => (submitting.value = null) })
+  router.post(appPath('/impersonate/stop'), {}, { onFinish: () => (submitting.value = null) })
 }
 </script>
 

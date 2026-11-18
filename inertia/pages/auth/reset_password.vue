@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAppPath } from '~/composables/use_app_path'
 import { Head, useForm } from '@inertiajs/vue3'
 import GuestLayout from '~/layouts/GuestLayout.vue'
 import Card from 'primevue/card'
@@ -8,6 +9,8 @@ import Message from 'primevue/message'
 import { computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from '~/composables/use_i18n'
+
+const appPath = useAppPath()
 
 const props = defineProps<{ token: string }>()
 const { t } = useI18n()
@@ -36,7 +39,7 @@ const submitDisabled = computed(
 const firstErrorMessage = computed(() => form.errors.password || form.errors.passwordConfirmation)
 
 function submit() {
-  form.post(`/reset-password/${props.token}`, {
+  form.post(appPath(`/reset-password/${props.token}`), {
     onError: (errors) => {
       const firstError =
         errors.password || errors.passwordConfirmation || t('auth.bootstrap_invalid')
@@ -117,7 +120,7 @@ function submit() {
           />
 
           <div class="text-sm">
-            <a href="/login" class="text-zinc-300 hover:text-zinc-100">
+            <a :href="appPath('/login')" class="text-zinc-300 hover:text-zinc-100">
               {{ t('auth.back_to_login_link') }}
             </a>
           </div>

@@ -1,6 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
-import { appPath } from '#config/base_path'
 
 /**
  * Kiosk-only middleware restricts the kiosk endpoints to the dedicated kiosk account.
@@ -23,7 +22,7 @@ export default class KioskOnlyMiddleware {
         type: 'danger',
         message: ctx.i18n.t('messages.unauthorized'),
       })
-      return ctx.response.redirect(appPath('/'))
+      return ctx.response.redirect('/')
     }
 
     return next()

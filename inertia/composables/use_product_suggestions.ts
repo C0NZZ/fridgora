@@ -1,4 +1,5 @@
 import { reactive, ref, watch } from 'vue'
+import { useAppPath } from './use_app_path'
 
 interface SuggestibleForm {
   displayName: string
@@ -16,8 +17,8 @@ function xsrfToken() {
   return decodeURIComponent(document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/)?.[1] ?? '')
 }
 
-async function post<T>(body: Record<string, unknown>): Promise<T> {
-  const response = await fetch('/supplier/products/suggest', {
+async function post<T>(url: string, body: Record<string, unknown>): Promise<T> {
+  const response = await fetch(url, {
     method: 'POST',
     credentials: 'same-origin',
     headers: {
@@ -43,6 +44,7 @@ async function post<T>(body: Record<string, unknown>): Promise<T> {
  * explicit "Navrhnout". Every filled field says where its value came from until edited.
  */
 export function useProductSuggestions(form: SuggestibleForm, aiEnabled: boolean) {
+  const appPath = useAppPath()
   const hints = reactive({ category: false, allergens: false, description: false })
   const describing = ref(false)
   const descriptionError = ref('')
@@ -76,11 +78,14 @@ export function useProductSuggestions(form: SuggestibleForm, aiEnabled: boolean)
     }
     if (form.categoryId !== null && form.allergenIds.length > 0) return
     try {
-      const result = await post<{ categoryId: number | null; allergenIds: number[] }>({
-        field: 'classification',
-        name: form.displayName.trim() || found.name || form.barcode,
-        barcode: form.barcode.trim(),
-      })
+      const result = await post<{ categoryId: number | null; allergenIds: number[] }>(
+        appPath('/supplier/products/suggest'),
+        {
+          field: 'classification',
+          name: form.displayName.trim() || found.name || form.barcode,
+          barcode: form.barcode.trim(),
+        }
+      )
       if (form.categoryId === null && result.categoryId !== null) {
         filled.categoryId = result.categoryId
         form.categoryId = result.categoryId
@@ -101,7 +106,7 @@ export function useProductSuggestions(form: SuggestibleForm, aiEnabled: boolean)
     describing.value = true
     descriptionError.value = ''
     try {
-      const result = await post<{ description: string }>({
+      const result = await post<{ description: string }>(appPath('/supplier/products/suggest'), {
         field: 'description',
         name: form.displayName.trim(),
         ...(/^\d{8,14}$/.test(form.barcode.trim()) ? { barcode: form.barcode.trim() } : {}),

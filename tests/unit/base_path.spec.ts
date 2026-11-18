@@ -1,8 +1,16 @@
 import '#tests/test_context'
 import { test } from '@japa/runner'
-import { prefixAppPath, resolveBasePath } from '#helpers/base_path'
+import { prefixAppPath, publicUrlAtBasePath, resolveBasePath } from '#helpers/base_path'
 
 test.group('Base path', () => {
+  test('builds a public URL from the origin and effective mount', ({ assert }) => {
+    assert.equal(
+      publicUrlAtBasePath('https://example.com:8443/old-path/', '/office/fridgora'),
+      'https://example.com:8443/office/fridgora'
+    )
+    assert.equal(publicUrlAtBasePath('https://example.com/old-path/', ''), 'https://example.com')
+  })
+
   test('uses the public URL unless an explicit path overrides it', ({ assert }) => {
     assert.equal(resolveBasePath(), '')
     assert.equal(resolveBasePath('', 'https://example.com'), '')
