@@ -113,6 +113,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   APP_URL: Env.schema.string.optional({ format: 'url', tld: false }),
+  APP_BASE_PATH: Env.schema.string.optional(),
   FEEDBACK_URL: Env.schema.string.optional({ format: 'url', tld: false }),
   SWAGGER_ENABLED: Env.schema.boolean.optional(),
   RATINGS_PUBLIC_FEED_ENABLED: Env.schema.boolean.optional(),

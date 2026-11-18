@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
+import { appPath } from '#config/base_path'
 import type { Authenticators } from '@adonisjs/auth/types'
 
 /**
@@ -13,7 +14,7 @@ export default class GuestMiddleware {
   /**
    * The URL to redirect to when user is logged-in
    */
-  redirectTo = '/'
+  redirectTo = appPath('/')
 
   async handle(
     ctx: HttpContext,

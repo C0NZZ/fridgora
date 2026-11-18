@@ -24,6 +24,7 @@ x-app-env: &app-env
   TZ: ${TZ:-UTC} # e.g. Europe/Prague
   APP_NAME: ${APP_NAME:-Fridgora}
   APP_URL: ${APP_URL:-http://localhost:3000} # [REQUIRED] public URL used in email links
+  APP_BASE_PATH: ${APP_BASE_PATH:-} # optional override for the mount path in APP_URL
   CURRENCY: ${CURRENCY:-CZK} # ISO 4217 currency code (e.g. CZK, USD, EUR)
   FEEDBACK_URL: ${FEEDBACK_URL:-} # optional link shown in the UI sidebar
 

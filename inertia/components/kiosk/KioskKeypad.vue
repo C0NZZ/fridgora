@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '~/composables/use_i18n'
+import { useAppPath } from '~/composables/use_app_path'
 
 defineProps<{
   loading: boolean
@@ -11,6 +12,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const appPath = useAppPath()
 const keypadInput = ref('')
 const tonePlayers = new Map<string, HTMLAudioElement>()
 
@@ -27,7 +29,7 @@ function playTone(key: string) {
 
   let player = tonePlayers.get(toneFile)
   if (!player) {
-    player = new Audio(`/keypad/${toneFile}`)
+    player = new Audio(appPath(`/keypad/${toneFile}`))
     player.preload = 'auto'
     tonePlayers.set(toneFile, player)
   }
@@ -82,7 +84,7 @@ onMounted(() => {
   // Pre-load all tone files so the first keypress plays without a network delay.
   for (const file of ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'star', 'hash']) {
     const toneFile = `${file}.wav`
-    const player = new Audio(`/keypad/${toneFile}`)
+    const player = new Audio(appPath(`/keypad/${toneFile}`))
     player.preload = 'auto'
     tonePlayers.set(toneFile, player)
   }

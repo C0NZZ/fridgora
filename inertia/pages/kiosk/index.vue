@@ -13,6 +13,7 @@ import KioskBasket, {
 import KioskCatalog, { type ProductItem } from '~/components/kiosk/KioskCatalog.vue'
 import KioskThankYou from '~/components/kiosk/KioskThankYou.vue'
 import { useI18n } from '~/composables/use_i18n'
+import { useAppPath } from '~/composables/use_app_path'
 
 // ── Server-provided props ─────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ const props = defineProps<{
 // ── Composables ───────────────────────────────────────────────────────────────
 
 const { t } = useI18n()
+const appPath = useAppPath()
 const toast = useToast()
 const confirm = useConfirm()
 
@@ -144,7 +146,7 @@ function startBackgroundMusic(tracks: MusicTrack[]) {
 function playEventTone(fileName: string) {
   let player = eventTonePlayers.get(fileName)
   if (!player) {
-    player = new Audio(`/keypad/${fileName}`)
+    player = new Audio(appPath(`/keypad/${fileName}`))
     player.preload = 'auto'
     eventTonePlayers.set(fileName, player)
   }
@@ -436,13 +438,13 @@ async function onKeypadSubmit(keypadId: string) {
   keypadLoading.value = true
 
   try {
-    const res = await fetch(`/kiosk/customer?keypadId=${encodeURIComponent(keypadId)}`, {
+    const res = await fetch(appPath(`/kiosk/customer?keypadId=${encodeURIComponent(keypadId)}`), {
       headers: { Accept: 'application/json' },
     })
     const data = await res.json()
 
     if (data.action === 'logout') {
-      router.post('/logout')
+      router.post(appPath('/logout'))
       return
     }
 
@@ -509,7 +511,7 @@ async function submitBasket() {
   outOfStockDeliveryId.value = null
 
   try {
-    const res = await fetch('/kiosk/purchase-basket', {
+    const res = await fetch(appPath('/kiosk/purchase-basket'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -626,7 +628,7 @@ onMounted(() => {
     'purchase-cancelled.wav',
     'price-changed.wav',
   ]) {
-    const player = new Audio(`/keypad/${fileName}`)
+    const player = new Audio(appPath(`/keypad/${fileName}`))
     player.preload = 'auto'
     eventTonePlayers.set(fileName, player)
   }

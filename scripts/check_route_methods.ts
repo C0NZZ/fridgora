@@ -75,7 +75,7 @@ function walk(dir: string, out: string[] = []): string[] {
   return out
 }
 
-const CALL_PATTERN = /\.(get|post|put|patch|delete)\(\s*[`'"](\/[^`'"]*)[`'"]/g
+const CALL_PATTERN = /\.(get|post|put|patch|delete)\(\s*(?:appPath\(\s*)?[`'"](\/[^`'"]*)[`'"]/g
 const GOTO_PATTERN = /\.goto\(\s*[`'"](\/[^`'"]*)[`'"]/g
 const FORM_COMPONENT_PATTERN =
   /<Form\b[^>]*?\bmethod=["']([a-z]+)["'][^>]*?\baction=["'](\/[^"']*)["']/gs

@@ -5,6 +5,7 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from '~/composables/use_i18n'
+import { useAppPath } from '~/composables/use_app_path'
 
 // CAMERA TODO: 'detecting' state — mount <video ref="cameraFeed" autoplay /> here
 // CAMERA TODO: 'product_found' state — show DetectedProduct[] cards with confidence %
@@ -45,6 +46,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const appPath = useAppPath()
 const confirm = useConfirm()
 const toast = useToast()
 
@@ -66,7 +68,7 @@ function purchaseProduct(product: ProductItem) {
     acceptLabel: t('kiosk.purchase_accept'),
     rejectLabel: t('common.cancel'),
     accept: () => {
-      router.post('/kiosk/purchase', {
+      router.post(appPath('/kiosk/purchase'), {
         customerId: props.customer!.id,
         deliveryId: product.deliveryId,
       })
@@ -159,7 +161,7 @@ function purchaseProduct(product: ProductItem) {
             <p class="mt-0.5 text-sm text-gray-400">{{ t('kiosk.quick_pick') }}</p>
           </div>
           <a
-            :href="`/kiosk/shop?keypadId=${keypadId}`"
+            :href="appPath(`/kiosk/shop?keypadId=${keypadId}`)"
             class="flex items-center gap-2 rounded-xl bg-gray-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-600"
           >
             {{ t('kiosk.see_all_products') }}

@@ -9,6 +9,7 @@ import Message from 'primevue/message'
 import { computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from '~/composables/use_i18n'
+import { useAppPath } from '~/composables/use_app_path'
 import type { SharedProps } from '~/types'
 
 const props = defineProps<{
@@ -17,6 +18,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const appPath = useAppPath()
 const toast = useToast()
 const page = usePage<SharedProps>()
 
@@ -73,11 +75,11 @@ function providerIcon(provider: 'microsoft' | 'discord'): string {
 }
 
 function providerHref(provider: 'microsoft' | 'discord'): string {
-  return `/auth/${provider}/redirect?intent=bootstrap`
+  return appPath(`/auth/${provider}/redirect?intent=bootstrap`)
 }
 
 function submit() {
-  form.post('/setup/bootstrap', {
+  form.post(appPath('/setup/bootstrap'), {
     onError: (errors) => {
       const firstError =
         errors.displayName ||

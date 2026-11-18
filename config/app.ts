@@ -1,6 +1,7 @@
 import app from '@adonisjs/core/services/app'
 import { defineConfig } from '@adonisjs/core/http'
 import proxyaddr from 'proxy-addr'
+import { appPath } from '#config/base_path'
 
 /**
  * Parse the TRUST_PROXY env var into a value accepted by AdonisJS / proxy-addr.
@@ -75,7 +76,7 @@ export const http = defineConfig({
    */
   cookie: {
     domain: '',
-    path: '/',
+    path: appPath('/'),
     maxAge: '2h',
     httpOnly: true,
     secure: app.inProduction,

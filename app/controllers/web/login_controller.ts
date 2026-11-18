@@ -1,4 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import { appPath } from '#config/base_path'
 import logger from '@adonisjs/core/services/logger'
 import User from '#models/user'
 import { loginValidator } from '#validators/auth'
@@ -19,7 +20,7 @@ export default class LoginController {
 
   async show({ inertia, request, response, session }: HttpContext) {
     if (!(await this.hasAnyAdmin())) {
-      return response.redirect('/setup/bootstrap')
+      return response.redirect(appPath('/setup/bootstrap'))
     }
 
     const returnTo = normalizeInternalReturnTo(request.input('returnTo'), '/shop')
@@ -31,7 +32,7 @@ export default class LoginController {
       !session.flashMessages.has('alert')
     ) {
       const redirectUrl = `/auth/${externalProviders[0]}/redirect${returnTo !== '/shop' ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`
-      return response.redirect(redirectUrl)
+      return response.redirect(appPath(redirectUrl))
     }
     const mode = this.registrationPolicy.getMode()
     return inertia.render('auth/login', {
@@ -44,13 +45,15 @@ export default class LoginController {
 
   async store({ request, auth, response, session, i18n }: HttpContext) {
     if (!(await this.hasAnyAdmin())) {
-      return response.redirect('/setup/bootstrap')
+      return response.redirect(appPath('/setup/bootstrap'))
     }
 
     if (this.authModes.isLocalLoginDisabled()) {
       const externalProviders = this.authModes.getEnabledExternalProviders()
       return response.redirect(
-        externalProviders.length === 1 ? `/auth/${externalProviders[0]}/redirect` : '/login'
+        appPath(
+          externalProviders.length === 1 ? `/auth/${externalProviders[0]}/redirect` : '/login'
+        )
       )
     }
 
@@ -62,7 +65,7 @@ export default class LoginController {
       if (user.isDisabled) {
         logger.warn({ userId: user.id, email }, 'Login denied: account disabled')
         session.flash('alert', { type: 'danger', message: i18n.t('messages.account_disabled') })
-        return response.redirect('/login')
+        return response.redirect(appPath('/login'))
       }
 
       // A fresh login never resumes an impersonation left in this browser's session.
@@ -81,14 +84,14 @@ export default class LoginController {
           type: 'warn',
           message: i18n.t('messages.email_verification_required'),
         })
-        return response.redirect('/profile')
+        return response.redirect(appPath('/profile'))
       }
       const returnTo = normalizeInternalReturnTo(request.input('returnTo'), '/shop')
-      return response.redirect(returnTo)
+      return response.redirect(appPath(returnTo))
     } catch {
       logger.warn({ email }, 'Password login failed: invalid credentials')
       session.flash('alert', { type: 'danger', message: i18n.t('messages.login_failed') })
-      return response.redirect('/login')
+      return response.redirect(appPath('/login'))
     }
   }
 
@@ -125,6 +128,6 @@ export default class LoginController {
         ua: request.header('user-agent') ?? null,
       })
     }
-    return response.redirect('/')
+    return response.redirect(appPath('/'))
   }
 }

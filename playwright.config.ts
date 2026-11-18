@@ -1,11 +1,13 @@
 import { defineConfig, devices } from '@playwright/test'
 import { getTestRuntimeEnv } from './tests/utils/test_db.js'
+import { KIOSK_PORT, KIOSK_URL } from './tests/e2e/helpers/mounted_kiosk.js'
 
 const E2E_PORT = '3345'
 const E2E_BASE_URL = `http://localhost:${E2E_PORT}`
 const testEnv = getTestRuntimeEnv({
   PORT: E2E_PORT,
   APP_URL: E2E_BASE_URL,
+  APP_BASE_PATH: '',
   // Lets the product form offer contributing to Open Food Facts. Nothing is ever sent:
   // contributions go out from the scheduler, which the e2e server does not run.
   PRODUCT_IMAGE_OPENFOODFACTS_USER: 'fridgora-e2e',
@@ -52,14 +54,23 @@ export default defineConfig({
   },
 
   /* Start the AdonisJS server in test mode before running E2E tests */
-  webServer: {
-    command: 'cd build && node bin/server.js',
-    url: E2E_BASE_URL,
-    // Always use a Playwright-managed server to avoid attaching to a stale local process.
-    reuseExistingServer: false,
-    env: testEnv,
-    timeout: 120 * 1000,
-  },
+  webServer: [
+    {
+      command: 'cd build && node bin/server.js',
+      url: E2E_BASE_URL,
+      // Always use a Playwright-managed server to avoid attaching to a stale local process.
+      reuseExistingServer: false,
+      env: testEnv,
+      timeout: 120 * 1000,
+    },
+    {
+      command: 'cd build && node bin/server.js',
+      url: `${KIOSK_URL}/`,
+      reuseExistingServer: false,
+      env: { ...testEnv, PORT: KIOSK_PORT, APP_URL: KIOSK_URL },
+      timeout: 120 * 1000,
+    },
+  ],
 
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 })

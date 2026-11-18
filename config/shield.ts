@@ -1,4 +1,5 @@
 import { defineConfig } from '@adonisjs/shield'
+import { appPath } from '#config/base_path'
 
 const shieldConfig = defineConfig({
   /**
@@ -27,6 +28,7 @@ const shieldConfig = defineConfig({
       )
     },
     enableXsrfCookie: true,
+    cookieOptions: { path: appPath('/') },
     /**
      * Unsafe verbs only — Shield validates exactly the methods listed here, so adding
      * GET/HEAD/OPTIONS would demand a token on every navigation. That makes the list a

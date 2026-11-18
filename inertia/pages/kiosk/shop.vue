@@ -8,6 +8,7 @@ import Message from 'primevue/message'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
 import { useI18n } from '~/composables/use_i18n'
+import { useAppPath } from '~/composables/use_app_path'
 
 interface CustomerInfo {
   id: number
@@ -43,6 +44,7 @@ const props = defineProps<{
 
 const confirm = useConfirm()
 const { t, locale } = useI18n()
+const appPath = useAppPath()
 
 /** Sort order: recommended+favorite > recommended > favorite > rest, then alphabetical. */
 function productRank(p: ProductItem): number {
@@ -76,7 +78,7 @@ function purchase(product: ProductItem) {
     acceptLabel: t('kiosk.purchase_accept'),
     rejectLabel: t('common.cancel'),
     accept: () => {
-      router.post('/kiosk/purchase', {
+      router.post(appPath('/kiosk/purchase'), {
         customerId: props.customer!.id,
         deliveryId: firstLot.deliveryId,
         expectedPrice: firstLot.price,
@@ -100,7 +102,7 @@ function purchase(product: ProductItem) {
           </h1>
           <p class="text-gray-400">ID: {{ customer.keypadId }}</p>
         </div>
-        <Link href="/kiosk">
+        <Link :href="appPath('/kiosk')">
           <Button :label="t('common.back')" icon="pi pi-arrow-left" severity="secondary" />
         </Link>
       </div>

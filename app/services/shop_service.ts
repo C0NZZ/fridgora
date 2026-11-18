@@ -1,3 +1,4 @@
+import { appPath } from '#config/base_path'
 import Product from '#models/product'
 import Category from '#models/category'
 import Allergen from '#models/allergen'
@@ -171,6 +172,7 @@ export default class ShopService {
 
         return {
           ...mapped,
+          imagePath: mapped.imagePath ? appPath(mapped.imagePath) : null,
           deliveryLots,
           price: firstLot?.price ?? null,
           deliveryId: firstLot?.deliveryId ?? null,

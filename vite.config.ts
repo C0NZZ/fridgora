@@ -8,7 +8,10 @@ import tailwindcss from '@tailwindcss/vite'
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // Built chunks and fonts resolve relative to their asset URL at runtime.
+  base: command === 'build' ? './' : '/',
+
   plugins: [
     inertia(),
     vue(),
@@ -32,4 +35,4 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['primevue', '@primeuix/themes', '@primeuix/styled'],
   },
-})
+}))

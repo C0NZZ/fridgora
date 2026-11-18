@@ -45,6 +45,34 @@ or use the provided `compose.yaml` with `${VAR}` substitution.
 docker compose up -d
 ```
 
+### Serve the Docker kiosk under a subpath
+
+Set `APP_URL=https://domain.com/fridgora` in the Compose `.env`. Fridgora uses the path
+from this URL at startup, so the same Docker image can serve the kiosk at
+`https://domain.com/fridgora/kiosk`. Set `APP_BASE_PATH=/fridgora` if you need
+to override the mount path. Nested paths such as `/office/fridgora` also work.
+
+In your HTTPS Nginx server block, forward the entire path to the Docker app.
+This example assumes Nginx and the Compose `app` service share a Docker network.
+
+```nginx
+location = /fridgora {
+    proxy_pass http://app:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+
+location /fridgora/ {
+    proxy_pass http://app:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+```
+
+Both `proxy_pass` directives omit a trailing slash so Nginx forwards the mount path.
+
 ---
 
 ## Secure deployment (Docker secrets)

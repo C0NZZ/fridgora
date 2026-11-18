@@ -5,6 +5,7 @@ import BaseInertiaMiddleware from '@adonisjs/inertia/inertia_middleware'
 import type { InferSharedProps } from '@adonisjs/inertia/types'
 import db from '@adonisjs/lucid/services/db'
 import env from '#start/env'
+import { basePath } from '#config/base_path'
 import buildInfo from '#services/build_info'
 import { readFileSync, readdirSync } from 'node:fs'
 import {
@@ -56,8 +57,21 @@ function loadTranslations(locale: string): Record<string, Record<string, string>
 export default class InertiaMiddleware extends BaseInertiaMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
     await this.init(ctx)
+    if (basePath) {
+      // Inertia uses its page URL to update browser history after a visit.
+      const createPage = ctx.inertia.page.bind(ctx.inertia)
+      ctx.inertia.page = async (...args) => {
+        const page = await createPage(...args)
+        return { ...page, url: basePath + page.url }
+      }
+    }
+
     const output = await next()
     this.dispose(ctx)
+    const location = ctx.response.getHeader('X-Inertia-Location')
+    if (basePath && location === ctx.request.url(true)) {
+      ctx.response.header('X-Inertia-Location', basePath + location)
+    }
     return output
   }
 
@@ -107,6 +121,7 @@ export default class InertiaMiddleware extends BaseInertiaMiddleware {
         impersonation ? { asName: impersonation.asName } : undefined
       ),
       locale,
+      basePath,
       appName: env.get('APP_NAME', 'Fridgora'),
       /**
        * Plain value, not `always()`, so it rides along with the first render and is then

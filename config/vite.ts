@@ -1,4 +1,5 @@
 import { defineConfig } from '@adonisjs/vite'
+import { appPath } from '#config/base_path'
 
 const viteBackendConfig = defineConfig({
   /**
@@ -18,7 +19,7 @@ const viteBackendConfig = defineConfig({
    * Feel free to change the value of the "assetsUrl" to
    * point to a CDN in production.
    */
-  assetsUrl: '/assets',
+  assetsUrl: appPath('/assets'),
 
   scriptAttributes: {
     defer: true,

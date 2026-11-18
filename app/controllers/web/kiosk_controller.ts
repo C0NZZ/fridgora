@@ -1,4 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import { appPath } from '#config/base_path'
 import User from '#models/user'
 import ShopService from '#services/shop_service'
 import { KIOSK_EASTER_EGG_CODE, kioskLogoutCode } from '#helpers/kiosk_codes'
@@ -92,7 +93,7 @@ export default class KioskController {
       excludedAllergenIds: excludedAllergenRows.map((row: { allergen_id: number }) =>
         Number(row.allergen_id)
       ),
-      musicTracks,
+      musicTracks: musicTracks.map((track) => ({ ...track, filePath: appPath(track.filePath) })),
     })
   }
 
@@ -215,13 +216,13 @@ export default class KioskController {
         : Number(rawExpectedPrice)
 
     if (!customerId || !deliveryId) {
-      return response.redirect('/kiosk')
+      return response.redirect(appPath('/kiosk'))
     }
 
     // The customer id comes from the request, so re-check the target is a live account.
     const customer = await User.query().where('id', customerId).where('isDisabled', false).first()
     if (!customer) {
-      return response.redirect('/kiosk')
+      return response.redirect(appPath('/kiosk'))
     }
 
     const orderService = new OrderService()
@@ -239,10 +240,12 @@ export default class KioskController {
         logger.error({ err }, 'Failed to send purchase confirmation email')
       })
 
-      return response.redirect(`/kiosk/shop?keypadId=${customer.keypadId ?? ''}&success=1`)
+      return response.redirect(appPath(`/kiosk/shop?keypadId=${customer.keypadId ?? ''}&success=1`))
     } catch (error) {
       const code = error instanceof PriceChangedError ? 'price_changed' : 'out_of_stock'
-      return response.redirect(`/kiosk/shop?keypadId=${customer.keypadId ?? ''}&error=${code}`)
+      return response.redirect(
+        appPath(`/kiosk/shop?keypadId=${customer.keypadId ?? ''}&error=${code}`)
+      )
     }
   }
 }

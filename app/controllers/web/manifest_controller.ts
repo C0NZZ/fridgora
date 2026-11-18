@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import env from '#start/env'
+import { appPath } from '#config/base_path'
 
 /**
  * Web app manifest, served dynamically so an installed instance carries its own
@@ -14,21 +15,21 @@ export default class ManifestController {
     response.header('cache-control', 'public, max-age=3600')
 
     return {
-      id: '/',
+      id: appPath('/'),
       name: appName,
       short_name: appName,
       lang: i18n?.locale ?? 'cs',
-      start_url: '/',
-      scope: '/',
+      start_url: appPath('/'),
+      scope: appPath('/'),
       display: 'standalone',
       background_color: '#09090b',
       theme_color: '#09090b',
       icons: [
-        { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-        { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-        { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: appPath('/favicon.svg'), sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+        { src: appPath('/icon-192.png'), sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: appPath('/icon-512.png'), sizes: '512x512', type: 'image/png', purpose: 'any' },
         {
-          src: '/icon-maskable-512.png',
+          src: appPath('/icon-maskable-512.png'),
           sizes: '512x512',
           type: 'image/png',
           purpose: 'maskable',

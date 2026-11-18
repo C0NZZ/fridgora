@@ -43,6 +43,7 @@ export interface SharedProps {
   flash: FlashMessages
   impersonation: Impersonation | undefined
   appName: string
+  basePath?: string
   build?: BuildInfo
   currencyCode?: string
   currency?: string

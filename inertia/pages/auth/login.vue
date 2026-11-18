@@ -10,6 +10,7 @@ import Divider from 'primevue/divider'
 import Message from 'primevue/message'
 import { computed } from 'vue'
 import { useI18n } from '~/composables/use_i18n'
+import { useAppPath } from '~/composables/use_app_path'
 import type { SharedProps } from '~/types'
 
 const props = defineProps<{
@@ -20,6 +21,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const appPath = useAppPath()
 const page = usePage<SharedProps>()
 
 const form = useForm({
@@ -52,7 +54,7 @@ const submitDisabled = computed(
 )
 
 function submit() {
-  form.post('/login', {
+  form.post(appPath('/login'), {
     onFinish: () => form.reset('password'),
   })
 }
@@ -65,7 +67,7 @@ function providerIcon(provider: 'microsoft' | 'discord'): string {
 }
 
 function providerHref(provider: 'microsoft' | 'discord'): string {
-  const base = `/auth/${provider}/redirect`
+  const base = appPath(`/auth/${provider}/redirect`)
   return props.returnTo ? `${base}?returnTo=${encodeURIComponent(props.returnTo)}` : base
 }
 </script>
@@ -127,12 +129,12 @@ function providerHref(provider: 'microsoft' | 'discord'): string {
             </div>
 
             <div class="flex items-center justify-between text-sm">
-              <a href="/forgot-password" class="text-zinc-300 hover:text-zinc-100">
+              <a :href="appPath('/forgot-password')" class="text-zinc-300 hover:text-zinc-100">
                 {{ t('auth.forgot_password_link') }}
               </a>
               <a
                 v-if="allowLocalRegistration"
-                href="/register"
+                :href="appPath('/register')"
                 class="text-zinc-300 hover:text-zinc-100"
               >
                 {{ t('auth.register_link') }}
