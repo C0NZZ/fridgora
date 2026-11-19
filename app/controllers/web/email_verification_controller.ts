@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
 import NotificationService from '#services/notification_service'
+import { isMailEnabled } from '#config/mail'
 import EmailVerificationService from '#services/email_verification_service'
 
 export default class EmailVerificationController {
@@ -46,6 +47,7 @@ export default class EmailVerificationController {
 
   async resend({ auth, response, session, i18n }: HttpContext) {
     const user = auth.user!
+    if (!isMailEnabled()) return response.redirect('/profile')
     const payload = await this.verifications.createForCurrentOrPendingEmail(user)
 
     if (!payload) {

@@ -147,7 +147,7 @@ test.group('Web Supplier - delivery corrections', (group) => {
 
       // The controller sends fire-and-forget; call it directly to assert deterministically.
       await new NotificationService().sendPriceCorrectionNotifications(correction.id)
-      fakeMailer.messages.assertSent((message) => message.hasTo(buyer.email))
+      fakeMailer.messages.assertSent((message) => message.hasTo(buyer.email!))
       assertFullyTranslated(assert, fakeMailer.messages.sent())
     } finally {
       mail.restore()
@@ -352,12 +352,12 @@ test.group('Supplier is told when someone else changes their records', (group) =
         reason: 'Admin fixed the price',
       })
       await notifications.sendDeliveryCorrectionToSupplier(foreign.correction.id)
-      fakeMailer.messages.assertSent((message) => message.hasTo(supplier.email))
+      fakeMailer.messages.assertSent((message) => message.hasTo(supplier.email!))
 
       const voided = await setup({ amount: 4, price: 10 })
       const { correction } = await service.voidDelivery(admin, voided.delivery.id, 'Duplicate')
       await notifications.sendDeliveryCorrectionToSupplier(correction.id)
-      fakeMailer.messages.assertSent((message) => message.hasTo(voided.supplier.email))
+      fakeMailer.messages.assertSent((message) => message.hasTo(voided.supplier.email!))
       assertFullyTranslated(assert, fakeMailer.messages.sent())
     } finally {
       mail.restore()
@@ -378,7 +378,7 @@ test.group('Supplier is told when someone else changes their records', (group) =
       })
 
       await new NotificationService().sendStornoToSupplier(order, admin)
-      fakeMailer.messages.assertSent((message) => message.hasTo(supplier.email))
+      fakeMailer.messages.assertSent((message) => message.hasTo(supplier.email!))
 
       // An admin cancelling a purchase from their own stock gets no self-notice.
       const ownStock = await setup({ amount: 5, price: 20 })
@@ -409,7 +409,7 @@ test.group('Supplier is told when someone else changes their records', (group) =
       for (const invoice of invoices) {
         await new NotificationService().sendInvoiceGeneratedToSupplier(invoice, admin)
       }
-      fakeMailer.messages.assertSent((message) => message.hasTo(supplier.email))
+      fakeMailer.messages.assertSent((message) => message.hasTo(supplier.email!))
       assertFullyTranslated(assert, fakeMailer.messages.sent())
     } finally {
       mail.restore()
@@ -441,8 +441,8 @@ test.group('Supplier is told when someone else changes their records', (group) =
         notifications.sendInvoiceGeneratedToSupplier(invoice, admin),
       ])
 
-      fakeMailer.messages.assertSent((message) => message.hasTo(buyer.email))
-      fakeMailer.messages.assertSent((message) => message.hasTo(supplier.email))
+      fakeMailer.messages.assertSent((message) => message.hasTo(buyer.email!))
+      fakeMailer.messages.assertSent((message) => message.hasTo(supplier.email!))
       assertFullyTranslated(assert, fakeMailer.messages.sent())
     } finally {
       mail.restore()
@@ -588,7 +588,7 @@ test.group('Corrections under contention and impersonation', (group) => {
         first.correction.id,
         first.repricedOrderIds
       )
-      fakeMailer.messages.assertSent((message) => message.hasTo(buyer.email))
+      fakeMailer.messages.assertSent((message) => message.hasTo(buyer.email!))
     } finally {
       mail.restore()
     }
@@ -618,7 +618,7 @@ test.group('Corrections under contention and impersonation', (group) => {
       assert.equal(correction.impersonatorId, admin.id)
 
       await new NotificationService().sendDeliveryCorrectionToSupplier(correction.id)
-      const notice = fakeMailer.messages.sent().find((message) => message.hasTo(supplier.email))
+      const notice = fakeMailer.messages.sent().find((message) => message.hasTo(supplier.email!))
       assert.exists(notice)
       assert.include(JSON.stringify(notice!.toJSON()), admin.displayName)
     } finally {

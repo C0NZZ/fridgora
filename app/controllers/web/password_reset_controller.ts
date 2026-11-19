@@ -11,6 +11,7 @@ import PasswordResetService from '#services/password_reset_service'
 import AuthModeService from '#services/auth_mode_service'
 import ReauthStepupService from '#services/reauth_stepup_service'
 import { isDomainError } from '#services/domain_error'
+import { isMailEnabled } from '#config/mail'
 import { revokeLongLivedCredentials } from '#services/credential_revocation'
 
 export default class PasswordResetController {
@@ -19,7 +20,7 @@ export default class PasswordResetController {
   private stepup = new ReauthStepupService()
 
   async showForgot({ inertia, response }: HttpContext) {
-    if (this.authModes.isLocalLoginDisabled()) {
+    if (this.authModes.isLocalLoginDisabled() || !isMailEnabled()) {
       return response.redirect('/login')
     }
 
@@ -27,7 +28,7 @@ export default class PasswordResetController {
   }
 
   async sendReset({ request, response, session, i18n }: HttpContext) {
-    if (this.authModes.isLocalLoginDisabled()) {
+    if (this.authModes.isLocalLoginDisabled() || !isMailEnabled()) {
       return response.redirect('/login')
     }
 
@@ -49,7 +50,7 @@ export default class PasswordResetController {
   }
 
   async showReset({ params, inertia, response, session, i18n }: HttpContext) {
-    if (this.authModes.isLocalLoginDisabled()) {
+    if (this.authModes.isLocalLoginDisabled() || !isMailEnabled()) {
       return response.redirect('/login')
     }
 
@@ -67,7 +68,7 @@ export default class PasswordResetController {
   }
 
   async reset({ params, request, response, session, i18n }: HttpContext) {
-    if (this.authModes.isLocalLoginDisabled()) {
+    if (this.authModes.isLocalLoginDisabled() || !isMailEnabled()) {
       return response.redirect('/login')
     }
 
@@ -115,7 +116,8 @@ export default class PasswordResetController {
   }
 
   async changeAuthenticated({ auth, request, response, session, i18n }: HttpContext) {
-    if (this.authModes.isLocalLoginDisabled()) {
+    const user = auth.user!
+    if (this.authModes.isLocalLoginDisabled() || !this.authModes.allowsLocalCredentials(user)) {
       session.flash('alert', {
         type: 'danger',
         message: i18n.t('messages.forbidden'),
@@ -123,7 +125,6 @@ export default class PasswordResetController {
       return response.redirect('/profile')
     }
 
-    const user = auth.user!
     const data = await request.validateUsing(changePasswordValidator)
 
     if (session.get('__impersonation')) {

@@ -1,3 +1,4 @@
+import { isMailEnabled } from '#config/mail'
 import type { HttpContext } from '@adonisjs/core/http'
 import { resolvePage } from '#helpers/pagination'
 import { listRedirectUrl } from '#helpers/list_redirect'
@@ -50,6 +51,7 @@ export default class UsersController {
     const policy = new RegistrationPolicyService()
 
     return inertia.render('admin/users/index', {
+      mailEnabled: isMailEnabled(),
       users: {
         data: users.map((u) => ({
           id: u.id,
@@ -184,7 +186,8 @@ export default class UsersController {
     const user = await User.findOrFail(userId)
 
     const resetService = new PasswordResetService()
-    const payload = await resetService.createToken(user.email)
+    const payload =
+      user.email && isMailEnabled() ? await resetService.createToken(user.email) : null
     if (!payload) {
       session.flash('alert', { type: 'danger', message: i18n.t('messages.action_failed') })
       return response.redirect(listRedirectUrl(request, '/admin/users'))

@@ -7,7 +7,11 @@ import AuditService from '#services/audit_service'
 import NotificationService from '#services/notification_service'
 import RegistrationPolicyService from '#services/registration_policy_service'
 import InvitationService from '#services/invitation_service'
-import AuthModeService, { type ExternalAuthProvider } from '#services/auth_mode_service'
+import AuthModeService, {
+  isExternalAuthProvider,
+  type ExternalAuthProvider,
+} from '#services/auth_mode_service'
+import OidcClientService from '#services/oidc_client_service'
 import AuthIdentityService from '#services/auth_identity_service'
 import ExternalProfileSyncService from '#services/external_profile_sync_service'
 import EmailVerificationService from '#services/email_verification_service'
@@ -23,6 +27,7 @@ export default class OidcController {
   private static readonly LINK_STEPUP_GRANT_KEY = '__oidc_link_stepup_grant'
 
   private authIdentity = new AuthIdentityService()
+  private oidc = new OidcClientService()
   private registrationPolicy = new RegistrationPolicyService()
   private invitations = new InvitationService()
   private authModes = new AuthModeService()
@@ -37,7 +42,7 @@ export default class OidcController {
 
     const grant = raw as { userId?: unknown; provider?: unknown; issuedAt?: unknown }
     if (typeof grant.userId !== 'number') return null
-    if (grant.provider !== 'microsoft' && grant.provider !== 'discord') return null
+    if (!isExternalAuthProvider(grant.provider)) return null
     if (typeof grant.issuedAt !== 'string' || grant.issuedAt.length === 0) return null
 
     const issuedAt = DateTime.fromISO(grant.issuedAt, { zone: 'utc' })
@@ -54,16 +59,16 @@ export default class OidcController {
     const provider = String(input ?? '')
       .trim()
       .toLowerCase()
-    if (provider !== 'microsoft' && provider !== 'discord') return null
-    return provider
+    return isExternalAuthProvider(provider) ? provider : null
   }
 
   private providerLabel(provider: ExternalAuthProvider): string {
+    if (provider === 'oidc') return 'OpenID Connect'
     return provider === 'microsoft' ? 'Microsoft' : 'Discord'
   }
 
   private getProviderProfile(
-    provider: ExternalAuthProvider,
+    provider: Exclude<ExternalAuthProvider, 'oidc'>,
     providerUser: any
   ): {
     providerUserId: string | null
@@ -111,6 +116,10 @@ export default class OidcController {
     const provider = this.resolveProvider(request.param('provider'))
     if (!provider || !this.authModes.isProviderEnabled(provider)) {
       return response.redirect('/login')
+    }
+
+    if (this.authModes.isLocalAdminOnly() && !(await this.hasAnyAdmin())) {
+      return response.redirect('/setup/bootstrap')
     }
 
     if (request.input('intent') === 'bootstrap' && !(await this.hasAnyAdmin())) {
@@ -174,6 +183,25 @@ export default class OidcController {
       })
     }
 
+    if (provider === 'oidc') {
+      try {
+        return response.redirect(
+          await this.oidc.redirect(
+            response,
+            request.input('intent') === 'reauth',
+            normalizeInternalReturnTo(request.input('returnTo'), '/shop')
+          )
+        )
+      } catch (error) {
+        logger.error({ err: error }, 'OpenID Connect discovery failed')
+        session.flash('alert', {
+          type: 'danger',
+          message: i18n.t('messages.login_provider_unavailable'),
+        })
+        return response.redirect('/login')
+      }
+    }
+
     return ally.use(provider).redirect()
   }
 
@@ -184,6 +212,10 @@ export default class OidcController {
     }
 
     const hasAnyAdmin = await this.hasAnyAdmin()
+    if (!hasAnyAdmin && this.authModes.isLocalAdminOnly()) {
+      return response.redirect('/setup/bootstrap')
+    }
+
     const bootstrapIntent = session.pull(OidcController.BOOTSTRAP_INTENT_KEY, false) === true
     const allowBootstrapRegistration = bootstrapIntent && !hasAnyAdmin
     const inviteIntentToken = session.pull(OidcController.INVITE_INTENT_TOKEN_KEY, null)
@@ -205,29 +237,35 @@ export default class OidcController {
       Number(reauthIntent.userId) > 0 &&
       reauthIntent.provider === provider
 
-    const externalProvider = ally.use(provider)
+    const externalProvider = provider === 'oidc' ? null : ally.use(provider)
 
-    if (externalProvider.accessDenied()) {
+    if (
+      externalProvider?.accessDenied() ||
+      (provider === 'oidc' && request.input('error') === 'access_denied')
+    ) {
       logger.warn({ provider }, 'External login cancelled by user')
       session.flash('alert', { type: 'warn', message: i18n.t('messages.login_cancelled') })
       return response.redirect('/login')
     }
 
-    if (externalProvider.stateMisMatch()) {
+    if (externalProvider?.stateMisMatch()) {
       logger.warn({ provider }, 'External login state mismatch')
       session.flash('alert', { type: 'danger', message: i18n.t('messages.login_state_mismatch') })
       return response.redirect('/login')
     }
 
-    if (externalProvider.hasError()) {
+    if (externalProvider?.hasError()) {
       logger.error({ provider }, 'External provider error')
       session.flash('alert', { type: 'danger', message: i18n.t('messages.login_failed') })
       return response.redirect('/login')
     }
 
-    let providerUser: any
+    let profile
     try {
-      providerUser = await externalProvider.user()
+      profile =
+        provider === 'oidc'
+          ? await this.oidc.profile(request, response, hasReauthIntent)
+          : this.getProviderProfile(provider, await externalProvider!.user())
     } catch (error) {
       logger.error({ err: error, provider }, 'External provider user info request failed')
       session.flash('alert', {
@@ -236,7 +274,6 @@ export default class OidcController {
       })
       return response.redirect('/login')
     }
-    const profile = this.getProviderProfile(provider, providerUser)
     const providerUserId = profile.providerUserId?.trim() || null
     const email = profile.email?.trim().toLowerCase() || null
     const displayName = profile.displayName || (email ? email.split('@')[0] : null)
@@ -252,11 +289,12 @@ export default class OidcController {
       return response.redirect('/login')
     }
 
+    const lookupEmail = this.authModes.isLocalAdminOnly() ? null : email
     if (hasReauthIntent) {
       const identityMatch = await this.authIdentity.resolveForLogin({
         provider,
         providerUserId,
-        email,
+        email: lookupEmail,
       })
       if (
         identityMatch.kind !== 'matched' ||
@@ -301,7 +339,7 @@ export default class OidcController {
         if (
           providerEmailTrusted &&
           email &&
-          currentUser.email.toLowerCase() === email &&
+          currentUser.email?.toLowerCase() === email &&
           !currentUser.emailVerifiedAt
         ) {
           currentUser.emailVerifiedAt = DateTime.utc()
@@ -347,7 +385,7 @@ export default class OidcController {
     const identityMatch = await this.authIdentity.resolveForLogin({
       provider,
       providerUserId,
-      email,
+      email: lookupEmail,
     })
     let user = identityMatch.kind === 'matched' ? identityMatch.user : null
 
@@ -370,7 +408,7 @@ export default class OidcController {
     }
 
     if (!user) {
-      if (!email) {
+      if (!email && provider !== 'oidc') {
         logger.warn(
           { provider, emailPresent: !!email },
           'External login denied: provider payload missing required email for first login'
@@ -394,7 +432,10 @@ export default class OidcController {
 
       let invitation = null
       if (inviteIntentInvitation) {
-        if (inviteIntentInvitation.email !== email) {
+        if (
+          inviteIntentInvitation.email !== email ||
+          (provider === 'oidc' && !providerEmailTrusted)
+        ) {
           logger.warn(
             { provider, email, inviteEmail: inviteIntentInvitation.email },
             'External login denied: invite token email does not match provider identity'
@@ -410,9 +451,14 @@ export default class OidcController {
       } else if (!allowBootstrapRegistration) {
         const registration = this.registrationPolicy.canSelfRegister({
           provider: 'social',
-          email,
+          email: provider === 'oidc' && !providerEmailTrusted ? null : email,
         })
-        if (!registration.allowed && registration.reason === 'invite_required') {
+        if (
+          !registration.allowed &&
+          registration.reason === 'invite_required' &&
+          email &&
+          (provider !== 'oidc' || providerEmailTrusted)
+        ) {
           invitation = await this.invitations.findActiveByEmail(email)
         }
         if (!registration.allowed && !invitation) {
@@ -440,21 +486,50 @@ export default class OidcController {
           trx as unknown as Parameters<typeof this.keypadIds.getNextAvailableUserKeypadId>[0]
         )
 
-        return User.create(
+        const knownIdentity = await this.authIdentity.resolveForLogin({
+          provider,
+          providerUserId,
+          email: null,
+          trx,
+        })
+        if (knownIdentity.kind === 'matched') return knownIdentity.user
+
+        const contactEmail = provider === 'oidc' && !providerEmailTrusted ? null : email
+        if (
+          contactEmail &&
+          (await User.query({ client: trx }).whereRaw('LOWER(email) = ?', [contactEmail]).first())
+        ) {
+          return null
+        }
+
+        const createdUser = await User.create(
           {
-            email,
-            displayName: displayName || email.split('@')[0],
+            email: contactEmail,
+            displayName: displayName || `User ${nextKeypadId}`,
             phone,
             role: allowBootstrapRegistration
               ? 'admin'
               : (invitation?.role ?? (hasAnyAdmin ? 'customer' : 'admin')),
             keypadId: nextKeypadId,
-            emailVerifiedAt: DateTime.utc(),
+            emailVerifiedAt: contactEmail ? DateTime.utc() : null,
             pendingEmail: null,
           },
           { client: trx }
         )
+        await this.authIdentity.ensureLinkedIdentity({
+          userId: createdUser.id,
+          provider,
+          providerUserId,
+          providerEmail: email,
+          providerEmailVerified: providerEmailTrusted,
+          trx,
+        })
+        return createdUser
       })
+      if (!user) {
+        session.flash('alert', { type: 'danger', message: i18n.t('messages.login_failed') })
+        return response.redirect('/login')
+      }
 
       if (invitation) {
         await this.invitations.acceptInviteForUser(invitation.id, user.id)
@@ -478,10 +553,12 @@ export default class OidcController {
       )
 
       // Send welcome email (fire-and-forget)
-      const notificationService = new NotificationService()
-      notificationService.sendWelcomeEmail(user).catch((err) => {
-        logger.error({ err }, `Failed to send welcome email to ${email}`)
-      })
+      if (provider !== 'oidc') {
+        const notificationService = new NotificationService()
+        notificationService.sendWelcomeEmail(user).catch((err) => {
+          logger.error({ err }, `Failed to send welcome email to ${email}`)
+        })
+      }
 
       await AuditService.log(user.id, 'user.registered', 'user', user.id, null, {
         via: provider,
@@ -507,7 +584,7 @@ export default class OidcController {
     if (
       providerEmailTrusted &&
       email &&
-      user.email.toLowerCase() === email &&
+      user.email?.toLowerCase() === email &&
       !user.emailVerifiedAt
     ) {
       user.emailVerifiedAt = DateTime.utc()
@@ -540,6 +617,7 @@ export default class OidcController {
       })
       return response.redirect('/profile')
     }
-    return response.redirect('/shop')
+    const returnTo = 'returnTo' in profile ? profile.returnTo : '/shop'
+    return response.redirect(normalizeInternalReturnTo(returnTo, '/shop'))
   }
 }

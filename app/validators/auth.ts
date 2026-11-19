@@ -1,4 +1,5 @@
 import vine from '@vinejs/vine'
+import { externalAuthProviders } from '#services/auth_mode_service'
 
 export const loginValidator = vine.compile(
   vine.object({
@@ -97,7 +98,7 @@ export const sensitiveReauthValidator = vine.compile(
 
 export const oidcLinkStartValidator = vine.compile(
   vine.object({
-    provider: vine.enum(['microsoft', 'discord'] as const),
+    provider: vine.enum(externalAuthProviders),
     currentPassword: vine.string().minLength(1).optional().nullable(),
   })
 )

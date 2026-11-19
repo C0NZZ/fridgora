@@ -50,6 +50,34 @@ test.group('AuthIdentityService', (group) => {
     }
   })
 
+  test('generic OIDC matches by identity even when the supplied email belongs to an administrator', async ({
+    assert,
+  }) => {
+    const admin = await UserFactory.apply('admin').merge({ email: 'admin@example.com' }).create()
+    const externalUser = await UserFactory.merge({ email: null }).create()
+    await service.ensureLinkedIdentity({
+      userId: externalUser.id,
+      provider: 'oidc',
+      providerUserId: 'issuer-and-subject',
+      providerEmail: null,
+      providerEmailVerified: false,
+    })
+
+    const unknown = await service.resolveForLogin({
+      provider: 'oidc',
+      providerUserId: 'different-subject',
+      email: admin.email,
+    })
+    assert.equal(unknown.kind, 'not_found')
+    const linked = await service.resolveForLogin({
+      provider: 'oidc',
+      providerUserId: 'issuer-and-subject',
+      email: admin.email,
+    })
+    assert.equal(linked.kind, 'matched')
+    if (linked.kind === 'matched') assert.equal(linked.user.id, externalUser.id)
+  })
+
   test('returns not_found when neither provider identity nor email matches', async ({ assert }) => {
     const match = await service.resolveForLogin({
       provider: 'discord',

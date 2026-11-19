@@ -48,7 +48,7 @@ test.group('NotificationService - sendUnpaidInvoiceReminders', (group) => {
     await notificationService.sendUnpaidInvoiceReminders()
 
     assert.isAbove(fakeMailer.messages.sent().length, 0)
-    fakeMailer.messages.assertSent((msg) => msg.hasTo(buyer.email))
+    fakeMailer.messages.assertSent((msg) => msg.hasTo(buyer.email!))
   })
 
   test('skips invoice newer than 3 days', async ({ assert }) => {
@@ -212,7 +212,7 @@ test.group('NotificationService - sendPendingApprovalReminders', (group) => {
     await notificationService.sendPendingApprovalReminders()
 
     assert.equal(fakeMailer.messages.sent().length, 1)
-    fakeMailer.messages.assertSent((msg) => msg.hasTo(supplier.email))
+    fakeMailer.messages.assertSent((msg) => msg.hasTo(supplier.email!))
   })
 
   test('groups multiple pending invoices into one email per supplier', async ({ assert }) => {
@@ -324,7 +324,7 @@ test.group('NotificationService - purchase confirmations', (group) => {
     await notificationService.sendPurchaseConfirmation(order)
 
     assert.equal(fakeMailer.messages.sent().length, 1)
-    fakeMailer.messages.assertSent((msg) => msg.hasTo(buyer.email))
+    fakeMailer.messages.assertSent((msg) => msg.hasTo(buyer.email!))
   })
 
   test('skips batch purchase confirmation for non-kiosk when buyer disabled purchase emails', async ({
@@ -373,6 +373,6 @@ test.group('NotificationService - purchase confirmations', (group) => {
     await notificationService.sendBatchPurchaseConfirmation([first, second], buyer.id)
 
     assert.equal(fakeMailer.messages.sent().length, 1)
-    fakeMailer.messages.assertSent((msg) => msg.hasTo(buyer.email))
+    fakeMailer.messages.assertSent((msg) => msg.hasTo(buyer.email!))
   })
 })

@@ -49,6 +49,7 @@ x-app-env: &app-env
   # ---------------------------------------------------------------------------
   # Mail (SMTP)
   # ---------------------------------------------------------------------------
+  MAIL_ENABLED: ${MAIL_ENABLED:-true}
   SMTP_HOST: ${SMTP_HOST:-localhost}
   SMTP_PORT: ${SMTP_PORT:-587} # 587 (STARTTLS) or 465 (SSL) or 25 (plain)
   SMTP_USERNAME: ${SMTP_USERNAME:-} # leave empty if no auth
@@ -65,7 +66,14 @@ x-app-env: &app-env
   # ---------------------------------------------------------------------------
   # Authentication providers (optional)
   # ---------------------------------------------------------------------------
-  AUTH_PROVIDERS: ${AUTH_PROVIDERS:-local} # comma list: local,microsoft,discord
+  AUTH_PROVIDERS: ${AUTH_PROVIDERS:-local} # comma list: local,microsoft,discord,oidc
+  AUTH_LOCAL_ADMIN_ONLY: ${AUTH_LOCAL_ADMIN_ONLY:-false}
+  AUTH_PROVIDER_OIDC_ISSUER: ${AUTH_PROVIDER_OIDC_ISSUER:-}
+  AUTH_PROVIDER_OIDC_CLIENT_ID: ${AUTH_PROVIDER_OIDC_CLIENT_ID:-}
+  AUTH_PROVIDER_OIDC_CLIENT_SECRET: ${AUTH_PROVIDER_OIDC_CLIENT_SECRET:-}
+  AUTH_PROVIDER_OIDC_SCOPES: ${AUTH_PROVIDER_OIDC_SCOPES:-openid profile email}
+  AUTH_PROVIDER_OIDC_TOKEN_AUTH_METHOD: ${AUTH_PROVIDER_OIDC_TOKEN_AUTH_METHOD:-client_secret_basic}
+  AUTH_PROVIDER_OIDC_REDIRECT_URI: ${AUTH_PROVIDER_OIDC_REDIRECT_URI:-}
   AUTH_AUTO_REGISTER_PROVIDERS: ${AUTH_AUTO_REGISTER_PROVIDERS:-} # e.g. microsoft,discord
   AUTH_REGISTRATION_MODE: ${AUTH_REGISTRATION_MODE:-open} # open | invite_only | domain_auto_approve | closed
   AUTH_REGISTRATION_ALLOWED_DOMAINS: ${AUTH_REGISTRATION_ALLOWED_DOMAINS:-}

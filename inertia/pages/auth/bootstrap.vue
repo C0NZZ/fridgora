@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import {
+  providerIcon,
+  providerLabel,
+  type ExternalAuthProvider,
+} from '~/composables/auth_providers'
 import { Head, useForm, usePage } from '@inertiajs/vue3'
 import GuestLayout from '~/layouts/GuestLayout.vue'
 import Card from 'primevue/card'
@@ -14,7 +19,7 @@ import type { SharedProps } from '~/types'
 
 const props = defineProps<{
   localEnabled?: boolean
-  externalProviders?: Array<'microsoft' | 'discord'>
+  externalProviders?: Array<ExternalAuthProvider>
 }>()
 
 const { t } = useI18n()
@@ -66,15 +71,7 @@ const submitDisabled = computed(
     form.passwordConfirmation.length < 8 ||
     form.password !== form.passwordConfirmation
 )
-function providerLabel(provider: 'microsoft' | 'discord'): string {
-  return provider === 'microsoft' ? 'Microsoft' : 'Discord'
-}
-
-function providerIcon(provider: 'microsoft' | 'discord'): string {
-  return provider === 'microsoft' ? 'pi pi-microsoft' : 'pi pi-discord'
-}
-
-function providerHref(provider: 'microsoft' | 'discord'): string {
+function providerHref(provider: ExternalAuthProvider): string {
   return appPath(`/auth/${provider}/redirect?intent=bootstrap`)
 }
 

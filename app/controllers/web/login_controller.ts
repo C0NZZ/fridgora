@@ -6,6 +6,7 @@ import AuditService from '#services/audit_service'
 import RegistrationPolicyService from '#services/registration_policy_service'
 import AuthModeService from '#services/auth_mode_service'
 import EmailVerificationService from '#services/email_verification_service'
+import { isMailEnabled } from '#config/mail'
 import { normalizeInternalReturnTo } from '#helpers/safe_return_path'
 
 export default class LoginController {
@@ -36,8 +37,10 @@ export default class LoginController {
     const mode = this.registrationPolicy.getMode()
     return inertia.render('auth/login', {
       externalProviders,
-      allowLocalRegistration: mode === 'open' || mode === 'domain_auto_approve',
+      allowLocalRegistration:
+        !this.authModes.isLocalAdminOnly() && (mode === 'open' || mode === 'domain_auto_approve'),
       localEnabled: this.authModes.isLocalEnabled(),
+      mailEnabled: isMailEnabled(),
       returnTo: returnTo !== '/shop' ? returnTo : null,
     })
   }
@@ -58,6 +61,10 @@ export default class LoginController {
 
     try {
       const user = await User.verifyCredentials(email, password)
+      if (!this.authModes.allowsLocalCredentials(user)) {
+        session.flash('alert', { type: 'danger', message: i18n.t('messages.login_failed') })
+        return response.redirect('/login')
+      }
 
       if (user.isDisabled) {
         logger.warn({ userId: user.id, email }, 'Login denied: account disabled')

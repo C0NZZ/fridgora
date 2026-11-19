@@ -76,6 +76,8 @@ export function getTestRuntimeEnv(overrides: Record<string, string> = {}): Recor
     SMTP_FROM_NAME: process.env.SMTP_FROM_NAME ?? 'Test',
     // Keep auth mode deterministic for tests, regardless of developer shell env.
     AUTH_PROVIDERS: 'local',
+    AUTH_LOCAL_ADMIN_ONLY: 'false',
+    MAIL_ENABLED: 'true',
     AUTH_AUTO_REGISTER_PROVIDERS: '',
     AUTH_REGISTRATION_MODE: '',
     AUTH_REGISTRATION_ALLOWED_DOMAINS: '',

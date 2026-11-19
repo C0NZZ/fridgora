@@ -852,7 +852,7 @@ test.group('API MCP - OAuth server', (group) => {
         clientName: 'Claude',
       })
       await new Promise((resolve) => setTimeout(resolve, 50))
-      fakeMailer.messages.assertSent((message) => message.hasTo(user.email))
+      fakeMailer.messages.assertSent((message) => message.hasTo(user.email!))
     } finally {
       mail.restore()
     }

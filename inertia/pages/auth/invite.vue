@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import {
+  providerIcon,
+  providerLabel,
+  type ExternalAuthProvider,
+} from '~/composables/auth_providers'
 import { useAppPath } from '~/composables/use_app_path'
 import { Head, useForm, usePage } from '@inertiajs/vue3'
 import GuestLayout from '~/layouts/GuestLayout.vue'
@@ -18,7 +23,7 @@ const props = defineProps<{
   token: string
   email: string
   role: 'customer' | 'supplier' | 'admin'
-  externalProviders?: Array<'microsoft' | 'discord'>
+  externalProviders?: Array<ExternalAuthProvider>
   localEnabled?: boolean
 }>()
 
@@ -62,15 +67,7 @@ const submitDisabled = computed(
     form.passwordConfirmation.length < 8 ||
     form.password !== form.passwordConfirmation
 )
-function providerLabel(provider: 'microsoft' | 'discord'): string {
-  return provider === 'microsoft' ? 'Microsoft' : 'Discord'
-}
-
-function providerIcon(provider: 'microsoft' | 'discord'): string {
-  return provider === 'microsoft' ? 'pi pi-microsoft' : 'pi pi-discord'
-}
-
-const providerInviteHref = (provider: 'microsoft' | 'discord') =>
+const providerInviteHref = (provider: ExternalAuthProvider) =>
   appPath(`/auth/${provider}/redirect?intent=invite&token=${encodeURIComponent(props.token)}`)
 
 function submit() {

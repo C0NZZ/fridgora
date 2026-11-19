@@ -1,3 +1,4 @@
+import type { ExternalAuthProvider } from '#services/auth_mode_service'
 import { randomBytes } from 'node:crypto'
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
@@ -6,7 +7,7 @@ import env from '#start/env'
 export type PendingDraftAction =
   | { type: 'profile-submit' }
   | { type: 'password-change' }
-  | { type: 'oidc-link'; provider: 'microsoft' | 'discord' }
+  | { type: 'oidc-link'; provider: ExternalAuthProvider }
 
 export type PendingDraftPayload = {
   action: PendingDraftAction

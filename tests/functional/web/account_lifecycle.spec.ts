@@ -401,7 +401,7 @@ test.group('Password change revokes long-lived credentials', (group) => {
     const user = await UserFactory.merge({ email: 'reset-revoke@example.com' }).create()
     await seedLongLivedCredentials(user)
 
-    const payload = await new PasswordResetService().createToken(user.email)
+    const payload = await new PasswordResetService().createToken(user.email!)
     assert.exists(payload)
     const token = payload!.resetUrl.split('/').pop()!
 

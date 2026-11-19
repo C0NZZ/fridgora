@@ -1,6 +1,11 @@
 import env from '#start/env'
 
-export type ExternalAuthProvider = 'microsoft' | 'discord'
+export const externalAuthProviders = ['microsoft', 'discord', 'oidc'] as const
+export type ExternalAuthProvider = (typeof externalAuthProviders)[number]
+
+export function isExternalAuthProvider(value: unknown): value is ExternalAuthProvider {
+  return externalAuthProviders.some((provider) => provider === value)
+}
 export type AuthProvider = 'local' | ExternalAuthProvider
 export type ProviderEmailVerificationMode = 'always' | 'claim' | 'never'
 
@@ -16,19 +21,17 @@ function parseCommaList(raw: string | undefined, fallback: string[] = []): Set<s
 }
 
 export default class AuthModeService {
-  private readonly supportedExternalProviders: ExternalAuthProvider[] = ['microsoft', 'discord']
-
   getEnabledProviders(): Set<AuthProvider> {
     const configured = parseCommaList(process.env.AUTH_PROVIDERS ?? env.get('AUTH_PROVIDERS'), [
       'local',
     ])
     const providers = new Set<AuthProvider>()
 
-    if (configured.has('local')) {
+    if (configured.has('local') || this.isLocalAdminOnly()) {
       providers.add('local')
     }
 
-    for (const provider of this.supportedExternalProviders) {
+    for (const provider of externalAuthProviders) {
       if (configured.has(provider)) {
         providers.add(provider)
       }
@@ -43,7 +46,7 @@ export default class AuthModeService {
 
   getEnabledExternalProviders(): ExternalAuthProvider[] {
     const enabled = this.getEnabledProviders()
-    return this.supportedExternalProviders.filter((provider) => enabled.has(provider))
+    return externalAuthProviders.filter((provider) => enabled.has(provider))
   }
 
   getDefaultExternalProvider(): ExternalAuthProvider | null {
@@ -60,6 +63,17 @@ export default class AuthModeService {
 
   isOidcEnabled(): boolean {
     return this.getEnabledExternalProviders().length > 0
+  }
+
+  isLocalAdminOnly(): boolean {
+    const configured = process.env.AUTH_LOCAL_ADMIN_ONLY
+    return configured === undefined
+      ? env.get('AUTH_LOCAL_ADMIN_ONLY', false)
+      : configured === 'true'
+  }
+
+  allowsLocalCredentials(user: { role: string; isKiosk?: boolean }): boolean {
+    return !this.isLocalAdminOnly() || user.role === 'admin' || user.isKiosk === true
   }
 
   isLocalLoginDisabled(): boolean {
@@ -88,6 +102,8 @@ export default class AuthModeService {
   }
 
   getProviderEmailVerificationMode(provider: ExternalAuthProvider): ProviderEmailVerificationMode {
+    if (provider === 'oidc') return 'claim'
+
     const envValue =
       provider === 'microsoft'
         ? env.get('AUTH_PROVIDER_MICROSOFT_EMAIL_VERIFICATION_MODE')

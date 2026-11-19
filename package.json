@@ -110,6 +110,7 @@
     "edge.js": "^6.5.0",
     "jose": "^6.2.3",
     "luxon": "^3.7.2",
+    "openid-client": "^6.9.0",
     "patch-package": "^8.0.1",
     "pg": "^8.18.0",
     "primeicons": "^7.0.0",

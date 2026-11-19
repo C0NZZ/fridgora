@@ -24,7 +24,9 @@ export default class BootstrapController {
 
     return inertia.render('auth/bootstrap', {
       localEnabled: this.authModes.isLocalEnabled(),
-      externalProviders: this.authModes.getEnabledExternalProviders(),
+      externalProviders: this.authModes.isLocalAdminOnly()
+        ? []
+        : this.authModes.getEnabledExternalProviders(),
     })
   }
 

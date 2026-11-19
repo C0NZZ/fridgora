@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
+import { isMailEnabled } from '#config/mail'
 import IbanChangeService from '#services/iban_change_service'
 import NotificationService from '#services/notification_service'
 
@@ -33,6 +34,7 @@ export default class IbanChangeController {
 
   async resend({ auth, response, session, i18n }: HttpContext) {
     const user = auth.user!
+    if (!user.email || !isMailEnabled()) return response.redirect('/profile')
     const payload = await this.ibans.createForPendingIban(user)
 
     if (!payload) {

@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import {
+  providerIcon,
+  providerLabel,
+  type ExternalAuthProvider,
+} from '~/composables/auth_providers'
 import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { Head, router, usePage } from '@inertiajs/vue3'
@@ -23,7 +28,7 @@ const appPath = useAppPath()
 interface UserData {
   id: number
   displayName: string
-  email: string
+  email: string | null
   pendingEmail: string | null
   emailVerifiedAt: string | null
   pendingIban: string | null
@@ -59,7 +64,7 @@ interface PendingDraft {
   action:
     | { type: 'profile-submit' }
     | { type: 'password-change' }
-    | { type: 'oidc-link'; provider: 'microsoft' | 'discord' }
+    | { type: 'oidc-link'; provider: ExternalAuthProvider }
   form: {
     displayName: string
     email: string
@@ -82,12 +87,13 @@ const props = defineProps<{
   user: UserData
   tokens: ApiToken[]
   allergens: AllergenOption[]
-  externalProviders: Array<'microsoft' | 'discord'>
-  linkedProviders: Array<'microsoft' | 'discord'>
+  externalProviders: Array<ExternalAuthProvider>
+  linkedProviders: Array<ExternalAuthProvider>
   sensitiveReauthActive: boolean
   sensitiveReauthValidUntil: string | null
   sensitiveReauthTtlMinutes: number
   localAuthEnabled: boolean
+  mailEnabled: boolean
   hasLocalPassword: boolean
   pendingDraft: PendingDraft | null
   apiDocsEnabled?: boolean
@@ -100,7 +106,7 @@ const page = usePage<SharedProps>()
 
 const form = ref({
   displayName: props.user.displayName,
-  email: props.user.email,
+  email: props.user.email ?? '',
   phone: props.user.phone ?? '',
   iban: props.user.iban ?? '',
   currentPassword: '',
@@ -138,14 +144,11 @@ const profileFieldErrors = computed(() => ({
       : form.value.displayName.length > PROFILE_LIMITS.displayName
         ? t('profile.field_too_long', { max: String(PROFILE_LIMITS.displayName) })
         : '',
-  email:
-    form.value.email.trim().length === 0
-      ? t('profile.field_required')
-      : profileEmailInvalid.value
-        ? t('auth.email_invalid')
-        : form.value.email.length > PROFILE_LIMITS.email
-          ? t('profile.field_too_long', { max: String(PROFILE_LIMITS.email) })
-          : '',
+  email: profileEmailInvalid.value
+    ? t('auth.email_invalid')
+    : form.value.email.length > PROFILE_LIMITS.email
+      ? t('profile.field_too_long', { max: String(PROFILE_LIMITS.email) })
+      : '',
   phone:
     (form.value.phone ?? '').length > PROFILE_LIMITS.phone
       ? t('profile.field_too_long', { max: String(PROFILE_LIMITS.phone) })
@@ -181,8 +184,11 @@ const canSubmitPassword = computed(
     passwordForm.value.newPassword === passwordForm.value.newPasswordConfirmation
 )
 const emailVerified = computed(() => !!props.user.emailVerifiedAt)
-const hasPendingEmail = computed(() => !!props.user.pendingEmail)
-const hasPendingIban = computed(() => !!props.user.pendingIban)
+const hasPendingEmail = computed(() => props.mailEnabled && !!props.user.pendingEmail)
+const hasPendingIban = computed(() => props.mailEnabled && !!props.user.pendingIban)
+const canVerifyEmail = computed(
+  () => props.mailEnabled && !!props.user.email && !emailVerified.value
+)
 const savingPreferences = ref(false)
 let preferenceWatchEnabled = false
 let preferencesSaveTimer: ReturnType<typeof setTimeout> | null = null
@@ -243,22 +249,14 @@ const pendingSensitiveAction = ref<
   | null
   | { type: 'profile-submit' }
   | { type: 'password-change' }
-  | { type: 'oidc-link'; provider: 'microsoft' | 'discord' }
+  | { type: 'oidc-link'; provider: ExternalAuthProvider }
 >(null)
 function hasActiveSensitiveStepup() {
   if (!Number.isFinite(reauthStepupValidUntilTs.value)) return false
   return Date.now() < Number(reauthStepupValidUntilTs.value)
 }
 
-function providerLabel(provider: 'microsoft' | 'discord'): string {
-  return provider === 'microsoft' ? 'Microsoft' : 'Discord'
-}
-
-function providerIcon(provider: 'microsoft' | 'discord'): string {
-  return provider === 'microsoft' ? 'pi pi-microsoft' : 'pi pi-discord'
-}
-
-function isLinked(provider: 'microsoft' | 'discord'): boolean {
+function isLinked(provider: ExternalAuthProvider): boolean {
   return props.linkedProviders.includes(provider)
 }
 
@@ -272,7 +270,9 @@ function normalizeIban(value: string | null | undefined) {
 
 function profileHasSensitiveChanges() {
   return (
-    normalizeEmail(form.value.email) !== normalizeEmail(props.user.email) ||
+    (props.mailEnabled &&
+      !!form.value.email.trim() &&
+      normalizeEmail(form.value.email) !== normalizeEmail(props.user.email)) ||
     normalizeIban(form.value.iban) !== normalizeIban(props.user.iban)
   )
 }
@@ -349,7 +349,7 @@ function submitProfileRequest() {
     appPath('/profile'),
     {
       displayName: form.value.displayName,
-      email: form.value.email,
+      email: form.value.email.trim() || undefined,
       phone: form.value.phone || null,
       iban: form.value.iban || null,
       currentPassword: form.value.currentPassword || null,
@@ -366,7 +366,7 @@ function submitProfileRequest() {
   )
 }
 
-function linkProviderRequest(provider: 'microsoft' | 'discord') {
+function linkProviderRequest(provider: ExternalAuthProvider) {
   router.post(
     appPath('/profile/oidc-link'),
     {
@@ -384,17 +384,17 @@ function linkProviderRequest(provider: 'microsoft' | 'discord') {
   )
 }
 
-function linkProvider(provider: 'microsoft' | 'discord') {
+function linkProvider(provider: ExternalAuthProvider) {
   requestSensitiveAction({ type: 'oidc-link', provider }, true)
 }
 
-function oidcReauthHref(provider: 'microsoft' | 'discord') {
+function oidcReauthHref(provider: ExternalAuthProvider) {
   return appPath(
     `/auth/${provider}/redirect?intent=reauth&returnTo=${encodeURIComponent('/profile')}`
   )
 }
 
-async function startOidcReauth(provider: 'microsoft' | 'discord') {
+async function startOidcReauth(provider: ExternalAuthProvider) {
   if (pendingSensitiveAction.value) {
     await postPendingDraft(pendingSensitiveAction.value)
   }
@@ -402,7 +402,7 @@ async function startOidcReauth(provider: 'microsoft' | 'discord') {
 }
 
 function submit() {
-  if (!form.value.displayName || !form.value.email || profileEmailInvalid.value) return
+  if (!canSubmitProfile.value || submitting.value) return
   requestSensitiveAction({ type: 'profile-submit' }, profileHasSensitiveChanges())
 }
 
@@ -653,12 +653,13 @@ onMounted(() => {
                 >
               </div>
 
-              <div>
+              <div v-if="mailEnabled || user.email">
                 <div class="mb-1 flex items-center justify-between gap-2">
                   <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300">{{
                     t('profile.email')
                   }}</label>
                   <span
+                    v-if="user.email"
                     class="rounded-full px-2 py-0.5 text-[11px] font-medium"
                     :class="
                       emailVerified
@@ -677,6 +678,7 @@ onMounted(() => {
                   class="w-full"
                   :maxlength="PROFILE_LIMITS.email"
                   :invalid="!!profileFieldErrors.email"
+                  :disabled="!mailEnabled"
                 />
                 <small v-if="profileEmailInvalid" class="text-red-500 dark:text-red-300">
                   {{ t('auth.email_invalid') }}
@@ -711,12 +713,9 @@ onMounted(() => {
               </div>
             </div>
 
-            <div
-              class="grid gap-2"
-              v-if="hasPendingEmail || hasPendingIban || (!emailVerified && !hasPendingEmail)"
-            >
+            <div class="grid gap-2" v-if="hasPendingEmail || hasPendingIban || canVerifyEmail">
               <div
-                v-if="hasPendingEmail || (!emailVerified && !hasPendingEmail)"
+                v-if="hasPendingEmail || canVerifyEmail"
                 class="flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 sm:flex-row sm:items-center sm:justify-between dark:border-amber-600/40 dark:bg-amber-900/20 dark:text-amber-200"
                 data-testid="profile-pending-email"
               >

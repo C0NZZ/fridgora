@@ -18,7 +18,8 @@ import AuditService from '#services/audit_service'
 import User from '#models/user'
 import Allergen from '#models/allergen'
 import Product from '#models/product'
-import AuthModeService from '#services/auth_mode_service'
+import { isMailEnabled } from '#config/mail'
+import AuthModeService, { isExternalAuthProvider } from '#services/auth_mode_service'
 import AuthIdentityService from '#services/auth_identity_service'
 import EmailVerificationService from '#services/email_verification_service'
 import NotificationService from '#services/notification_service'
@@ -140,8 +141,10 @@ export default class ProfileController {
       sensitiveReauthActive: this.stepup.isRecent(session),
       sensitiveReauthValidUntil: this.stepup.recentValidUntilIso(session),
       sensitiveReauthTtlMinutes: this.stepup.ttlMinutes(),
-      localAuthEnabled: this.authModes.isLocalEnabled(),
-      hasLocalPassword: !!user.password,
+      mailEnabled: isMailEnabled(),
+      localAuthEnabled:
+        this.authModes.isLocalEnabled() && this.authModes.allowsLocalCredentials(user),
+      hasLocalPassword: !!user.password && this.authModes.allowsLocalCredentials(user),
       pendingDraft,
       // Show the API docs (Scalar) link only when swagger is enabled.
       apiDocsEnabled: env.get('SWAGGER_ENABLED') === true,
@@ -158,11 +161,7 @@ export default class ProfileController {
       return response.badRequest({ error: 'invalid_action' })
     }
 
-    if (
-      actionType === 'oidc-link' &&
-      actionRaw.provider !== 'microsoft' &&
-      actionRaw.provider !== 'discord'
-    ) {
+    if (actionType === 'oidc-link' && !isExternalAuthProvider(actionRaw.provider)) {
       return response.badRequest({ error: 'invalid_action' })
     }
 
@@ -237,8 +236,10 @@ export default class ProfileController {
       excludedAllergenIds: await this.getExcludedAllergenIds(user.id),
     }
 
-    const requestedEmail = data.email.trim().toLowerCase()
-    const currentEmail = user.email.trim().toLowerCase()
+    const currentEmail = user.email?.trim().toLowerCase() ?? null
+    const requestedEmail = isMailEnabled()
+      ? (data.email?.trim().toLowerCase() ?? currentEmail)
+      : currentEmail
     const requestedIban = data.iban?.trim().toUpperCase() || null
     const currentIban = user.iban?.trim().toUpperCase() || null
     const emailChanged = requestedEmail !== currentEmail
@@ -255,7 +256,7 @@ export default class ProfileController {
       return response.redirect('/profile')
     }
 
-    if (emailChanged) {
+    if (emailChanged && requestedEmail) {
       const existing = await User.query()
         .whereNot('id', user.id)
         .whereRaw('LOWER(email) = ?', [requestedEmail])
@@ -293,6 +294,10 @@ export default class ProfileController {
     if (ibanChanged) {
       if (!requestedIban) {
         user.iban = null
+        user.pendingIban = null
+        user.ibanVerifiedAt = null
+      } else if (!user.email || !isMailEnabled()) {
+        user.iban = requestedIban
         user.pendingIban = null
         user.ibanVerifiedAt = null
       } else {
@@ -340,7 +345,7 @@ export default class ProfileController {
         })
     }
 
-    if (ibanPendingVerificationPayload) {
+    if (ibanPendingVerificationPayload && user.email) {
       const notifications = new NotificationService()
       notifications
         .sendIbanChangeVerificationEmail({
@@ -436,7 +441,7 @@ export default class ProfileController {
       return ctx.response.redirect('/profile')
     }
 
-    if (!user.password) {
+    if (!user.password || !this.authModes.allowsLocalCredentials(user)) {
       ctx.session.flash('alert', {
         type: 'danger',
         message: ctx.i18n.t('messages.sensitive_action_reauth_required'),

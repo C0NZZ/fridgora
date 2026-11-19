@@ -14,14 +14,14 @@ It is based on current implementation in:
 
 ### Providers axis
 
-`AUTH_PROVIDERS` supports: `local`, `microsoft`, `discord`.
+`AUTH_PROVIDERS` supports `local`, `microsoft`, `discord`, and `oidc`.
 
 Runtime rules:
 
 - Parsed as comma list, case-insensitive, whitespace-trimmed.
 - Unknown values are ignored.
 - If empty/invalid after parsing, app falls back to `local`.
-- External provider display order is fixed: `microsoft`, then `discord`.
+- The external providers appear in this order: `microsoft`, `discord`, `oidc`.
 
 Canonical provider sets:
 
@@ -58,6 +58,42 @@ Runtime rules:
 - Comma list (`microsoft`, `discord`).
 - Controls whether unknown users can be created on first OIDC login for those providers.
 - Independent from `AUTH_REGISTRATION_MODE=open/domain_auto_approve` for OIDC, except `invite_only` has special handling (see section 5).
+
+### Generic OpenID Connect with a local administrator
+
+Register Fridgora as a confidential OpenID Connect client with your identity provider. Give users access
+to that client at the provider. Set the redirect URI to your public Fridgora URL plus
+`/auth/oidc/callback`. Include any deployment path prefix.
+
+```dotenv
+AUTH_PROVIDERS=local,oidc
+AUTH_LOCAL_ADMIN_ONLY=true
+AUTH_AUTO_REGISTER_PROVIDERS=oidc
+AUTH_REGISTRATION_MODE=open
+AUTH_EMAIL_VERIFICATION_REQUIRED=false
+AUTH_PROVIDER_OIDC_ISSUER=https://identity.example.com/your-issuer
+AUTH_PROVIDER_OIDC_CLIENT_ID=fridgora
+AUTH_PROVIDER_OIDC_CLIENT_SECRET=your-client-secret
+MAIL_ENABLED=false
+```
+
+In this configuration `open` allows registration through the configured identity provider.
+`AUTH_LOCAL_ADMIN_ONLY` blocks public local registration and restricts password sign-in to
+administrators and kiosk devices. On a fresh installation, create the first administrator locally
+at `/setup/bootstrap`.
+
+OIDC users are identified by the issuer and subject, and can sign in even when the provider
+omits the email claim. A verified email may be stored as a contact address. Set
+`AUTH_PROVIDER_OIDC_SCOPES="openid profile"` to request no email claim. The token endpoint uses
+`client_secret_basic` by default and supports `AUTH_PROVIDER_OIDC_TOKEN_AUTH_METHOD=client_secret_post`.
+
+To use an existing
+Fridgora account with the generic provider, link it in the profile before turning off password
+sign-in for that user. Existing roles and purchases are then available under the linked login.
+
+When `MAIL_ENABLED=false`, email delivery and password reset by email are disabled.
+Administrators still sign in and change their passwords using their local credentials. Users
+can enter a payout IBAN after reauthenticating through their configured sign-in method.
 
 ## 2) Global Preconditions and Shared Rules
 
@@ -186,7 +222,7 @@ Allowed user creation when any of these is true:
 
 Denied creation when:
 
-- Provider email missing.
+- Provider email missing for Microsoft or Discord. The generic OIDC provider allows a missing email for automatic registration.
 - Provider user id missing.
 - Registration denied and no valid invite fallback.
 - Invite intent token email does not match provider email.

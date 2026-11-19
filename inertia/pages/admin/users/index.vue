@@ -26,7 +26,7 @@ const appPath = useAppPath()
 interface UserRow {
   id: number
   displayName: string
-  email: string
+  email: string | null
   role: 'customer' | 'supplier' | 'admin'
   isKiosk: boolean
   isDisabled: boolean
@@ -59,6 +59,7 @@ interface PaginatedInvites {
 
 const props = defineProps<{
   users: PaginatedUsers
+  mailEnabled: boolean
   filters: { role: string; userId: string; disabled: string; sortBy: string; sortOrder: string }
   userOptions: { id: number; displayName: string }[]
   invitations: PaginatedInvites
@@ -528,6 +529,7 @@ function changeInvitePage(page: number) {
               @click="generateInvoiceForUser(data.id, data.displayName)"
             />
             <Button
+              v-if="mailEnabled && data.email"
               icon="pi pi-envelope"
               severity="secondary"
               size="small"

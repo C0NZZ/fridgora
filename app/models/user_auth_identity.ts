@@ -3,7 +3,8 @@ import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 
-export type ExternalAuthProvider = 'microsoft' | 'discord'
+import type { ExternalAuthProvider } from '#services/auth_mode_service'
+export type { ExternalAuthProvider } from '#services/auth_mode_service'
 
 export default class UserAuthIdentity extends BaseModel {
   @column({ isPrimary: true })

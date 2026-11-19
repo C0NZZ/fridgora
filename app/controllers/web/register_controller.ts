@@ -1,3 +1,4 @@
+import { isMailEnabled } from '#config/mail'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 import logger from '@adonisjs/core/services/logger'
@@ -17,7 +18,7 @@ export default class RegisterController {
   private keypadIds = new KeypadIdService()
 
   async show({ inertia, response }: HttpContext) {
-    if (this.authModes.isLocalLoginDisabled()) {
+    if (this.authModes.isLocalLoginDisabled() || this.authModes.isLocalAdminOnly()) {
       return response.redirect('/login')
     }
 
@@ -30,7 +31,7 @@ export default class RegisterController {
   }
 
   async store({ request, auth, response, session, i18n }: HttpContext) {
-    if (this.authModes.isLocalLoginDisabled()) {
+    if (this.authModes.isLocalLoginDisabled() || this.authModes.isLocalAdminOnly()) {
       return response.redirect('/login')
     }
 
@@ -108,13 +109,15 @@ export default class RegisterController {
       ua: request.header('user-agent') ?? null,
     })
 
-    const notificationService = new NotificationService()
-    const verificationPayload = await this.verifications.createToken(user, user.email)
-    notificationService
-      .sendWelcomeEmail(user, { emailVerificationUrl: verificationPayload.verificationUrl })
-      .catch((err) => {
-        logger.error({ err }, `Failed to send welcome email to ${user.email}`)
-      })
+    if (isMailEnabled()) {
+      const notificationService = new NotificationService()
+      const verificationPayload = await this.verifications.createToken(user, normalizedEmail)
+      notificationService
+        .sendWelcomeEmail(user, { emailVerificationUrl: verificationPayload.verificationUrl })
+        .catch((err) => {
+          logger.error({ err }, `Failed to send welcome email to ${normalizedEmail}`)
+        })
+    }
 
     session.flash('alert', {
       type: 'success',

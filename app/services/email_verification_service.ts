@@ -27,8 +27,8 @@ export default class EmailVerificationService {
     return !!user.emailVerifiedAt
   }
 
-  shouldBlockAppAccess(user: Pick<User, 'emailVerifiedAt'>) {
-    return this.isVerificationRequired() && !this.isUserVerified(user)
+  shouldBlockAppAccess(user: Pick<User, 'emailVerifiedAt' | 'email'>) {
+    return this.isVerificationRequired() && !!user.email && !this.isUserVerified(user)
   }
 
   async createToken(user: User, emailInput: string) {
@@ -76,7 +76,7 @@ export default class EmailVerificationService {
 
     const user = token.user
     const tokenEmail = token.email.trim().toLowerCase()
-    const currentEmail = user.email.trim().toLowerCase()
+    const currentEmail = user.email?.trim().toLowerCase()
     const pendingEmail = user.pendingEmail?.trim().toLowerCase() ?? null
 
     if (pendingEmail && tokenEmail === pendingEmail) {

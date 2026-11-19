@@ -1,7 +1,7 @@
 export interface User {
   id: number
   displayName: string
-  email: string
+  email: string | null
   pendingEmail: string | null
   emailVerifiedAt: string | null
   iban: string | null

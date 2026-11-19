@@ -1,3 +1,4 @@
+import { isMailEnabled } from '#config/mail'
 import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
 import { acceptInviteValidator } from '#validators/auth'
@@ -26,7 +27,8 @@ export default class InviteRegistrationController {
     }
 
     const externalProviders = this.authModes.getEnabledExternalProviders()
-    const localEnabled = this.authModes.isLocalEnabled()
+    const localEnabled =
+      this.authModes.isLocalEnabled() && this.authModes.allowsLocalCredentials(status.invitation)
 
     if (!localEnabled) {
       if (externalProviders.length === 1) {
@@ -52,6 +54,12 @@ export default class InviteRegistrationController {
     }
 
     const token = String(params.token)
+    if (this.authModes.isLocalAdminOnly()) {
+      const status = await this.invitations.validateToken(token)
+      if (!status.valid || !this.authModes.allowsLocalCredentials(status.invitation)) {
+        return response.redirect('/login')
+      }
+    }
     const data = await request.validateUsing(acceptInviteValidator)
 
     if (data.password !== data.passwordConfirmation) {
@@ -91,13 +99,15 @@ export default class InviteRegistrationController {
         ua: request.header('user-agent') ?? null,
       })
 
-      const notificationService = new NotificationService()
-      const verificationPayload = await this.verifications.createToken(user, user.email)
-      notificationService
-        .sendWelcomeEmail(user, { emailVerificationUrl: verificationPayload.verificationUrl })
-        .catch((err) => {
-          logger.error({ err }, `Failed to send welcome email to ${user.email}`)
-        })
+      if (isMailEnabled() && user.email) {
+        const notificationService = new NotificationService()
+        const verificationPayload = await this.verifications.createToken(user, user.email)
+        notificationService
+          .sendWelcomeEmail(user, { emailVerificationUrl: verificationPayload.verificationUrl })
+          .catch((err) => {
+            logger.error({ err }, `Failed to send welcome email to ${user.email}`)
+          })
+      }
 
       session.flash('alert', {
         type: 'success',

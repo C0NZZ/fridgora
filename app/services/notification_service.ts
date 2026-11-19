@@ -1,3 +1,4 @@
+import { isMailEnabled } from '#config/mail'
 import { multiplyMoney, sumMoney } from '#shared/money'
 import mail from '@adonisjs/mail/services/main'
 import router from '@adonisjs/core/services/router'
@@ -60,9 +61,12 @@ export default class NotificationService {
           { expiresIn: '30 days', purpose: 'add-favorite', disableRouteLookup: true }
         )
 
+    const recipient = buyer.email
+    if (!recipient) return
+
     await mail.send((message) => {
       message
-        .to(buyer.email)
+        .to(recipient)
         .subject(
           this.i18n.t('emails.purchase_subject', { product: order.delivery.product.displayName })
         )
@@ -131,9 +135,12 @@ export default class NotificationService {
     }))
     const date = loadedOrders[0]?.createdAt.toFormat('dd.MM.yyyy HH:mm') ?? ''
 
+    const recipient = buyer.email
+    if (!recipient) return
+
     await mail.send((message) => {
       message
-        .to(buyer.email)
+        .to(recipient)
         .subject(
           this.i18n.t('emails.purchase_batch_subject', {
             count: orders.length,
@@ -166,9 +173,12 @@ export default class NotificationService {
     const buyer = invoice.buyer
     const qrImageData = await this.buildPaymentQr(invoice)
 
+    const recipient = buyer.email
+    if (!recipient) return
+
     await mail.send((message) => {
       message
-        .to(buyer.email)
+        .to(recipient)
         .subject(
           this.i18n.t('emails.invoice_subject', { id: invoice.id, amount: invoice.totalCost })
         )
@@ -202,9 +212,12 @@ export default class NotificationService {
     const supplier = invoice.supplier
     if (supplier.isDisabled) return
 
+    const recipient = supplier.email
+    if (!recipient) return
+
     await mail.send((message) => {
       message
-        .to(supplier.email)
+        .to(recipient)
         .subject(this.i18n.t('emails.payment_requested_subject', { id: invoice.id }))
         .htmlView('emails/payment_requested', {
           i18n: this.i18n,
@@ -230,9 +243,12 @@ export default class NotificationService {
     const subjectKey =
       action === 'approved' ? 'emails.payment_approved_subject' : 'emails.payment_rejected_subject'
 
+    const recipient = buyer.email
+    if (!recipient) return
+
     await mail.send((message) => {
       message
-        .to(buyer.email)
+        .to(recipient)
         .subject(this.i18n.t(subjectKey, { id: invoice.id }))
         .htmlView('emails/payment_status', {
           i18n: this.i18n,
@@ -251,6 +267,8 @@ export default class NotificationService {
    * Send daily purchase report to each user who opted in.
    */
   async sendDailyPurchaseReports() {
+    if (!isMailEnabled()) return
+
     const users = await User.query().where('sendDailyReport', true).where('isDisabled', false)
 
     for (const user of users) {
@@ -264,9 +282,12 @@ export default class NotificationService {
 
       const totalSpent = sumMoney(todayOrders.map((order) => order.unitPrice))
 
+      const recipient = user.email
+      if (!recipient) continue
+
       await mail.send((message) => {
         message
-          .to(user.email)
+          .to(recipient)
           .subject(
             this.i18n.t('emails.daily_report_subject', {
               count: todayOrders.length,
@@ -295,6 +316,8 @@ export default class NotificationService {
    * Only sends for invoices older than UNPAID_REMINDER_MIN_AGE_DAYS days (default: 3).
    */
   async sendUnpaidInvoiceReminders() {
+    if (!isMailEnabled()) return
+
     const minAgeDays = env.get('UNPAID_REMINDER_MIN_AGE_DAYS') ?? 3
     const unpaidInvoices = await Invoice.query()
       .where('isPaid', false)
@@ -311,9 +334,12 @@ export default class NotificationService {
       // straight from the reminder instead of digging up the first email.
       const qrImageData = await this.buildPaymentQr(invoice)
 
+      const recipient = buyer.email
+      if (!recipient) continue
+
       await mail.send((message) => {
         message
-          .to(buyer.email)
+          .to(recipient)
           .subject(
             this.i18n.t('emails.unpaid_reminder_subject', {
               id: invoice.id,
@@ -342,6 +368,8 @@ export default class NotificationService {
    * Remind suppliers about payments awaiting approval.
    */
   async sendPendingApprovalReminders() {
+    if (!isMailEnabled()) return
+
     const pendingInvoices = await Invoice.query()
       .where('isPaid', false)
       .where('isPaymentRequested', true)
@@ -362,9 +390,12 @@ export default class NotificationService {
 
       const totalPending = sumMoney(invoices.map((invoice) => invoice.totalCost))
 
+      const recipient = supplier.email
+      if (!recipient) continue
+
       await mail.send((message) => {
         message
-          .to(supplier.email)
+          .to(recipient)
           .subject(
             this.i18n.t('emails.pending_approval_subject', {
               count: invoices.length,
@@ -395,9 +426,12 @@ export default class NotificationService {
     const buyer = order.buyer
     if (buyer.isDisabled) return
 
+    const recipient = buyer.email
+    if (!recipient) return
+
     await mail.send((message) => {
       message
-        .to(buyer.email)
+        .to(recipient)
         .subject(this.i18n.t('emails.order_cancelled_subject', { id: order.id }))
         .htmlView('emails/order_cancelled', {
           i18n: this.i18n,
@@ -418,9 +452,12 @@ export default class NotificationService {
   async sendWelcomeEmail(user: User, options?: { emailVerificationUrl?: string | null }) {
     if (!user.email) return
 
+    const recipient = user.email
+    if (!recipient) return
+
     await mail.send((message) => {
       message
-        .to(user.email)
+        .to(recipient)
         .subject(this.i18n.t('emails.welcome_subject', { app_name: this.appName }))
         .htmlView('emails/welcome', {
           i18n: this.i18n,
@@ -518,9 +555,12 @@ export default class NotificationService {
   async sendMcpConnectedNotification(user: User, clientName: string) {
     if (user.isDisabled || !user.email) return
 
+    const recipient = user.email
+    if (!recipient) return
+
     await mail.send((message) => {
       message
-        .to(user.email)
+        .to(recipient)
         .subject(this.i18n.t('emails.mcp_connected_subject', { client: clientName }))
         .htmlView('emails/mcp_connected', {
           i18n: this.i18n,
@@ -545,9 +585,12 @@ export default class NotificationService {
   ) {
     if (supplier.id === actor.id || supplier.isDisabled || !supplier.email) return
 
+    const recipient = supplier.email
+    if (!recipient) return
+
     await mail.send((message) => {
       message
-        .to(supplier.email)
+        .to(recipient)
         .subject(notice.subject)
         .htmlView('emails/supplier_change_notice', {
           i18n: this.i18n,
@@ -727,9 +770,12 @@ export default class NotificationService {
       const newTotal = multiplyMoney(correction.newPrice, count)
       const difference = sumMoney([newTotal, -oldTotal])
 
+      const recipient = buyer.email
+      if (!recipient) continue
+
       await mail.send((message) => {
         message
-          .to(buyer.email)
+          .to(recipient)
           .subject(
             this.i18n.t('emails.price_correction_subject', {
               productName: correction.delivery.product.displayName,
@@ -806,9 +852,12 @@ export default class NotificationService {
     const supplier = invoice.supplier
     if (supplier.isDisabled) return
 
+    const recipient = supplier.email
+    if (!recipient) return
+
     await mail.send((message) => {
       message
-        .to(supplier.email)
+        .to(recipient)
         .subject(this.i18n.t('emails.payment_withdrawn_subject', { id: invoice.id }))
         .htmlView('emails/payment_withdrawn', {
           i18n: this.i18n,

@@ -4,10 +4,12 @@ import { apiTokenLoginValidator, apiKeypadLoginValidator } from '#validators/aut
 import env from '#start/env'
 import EmailVerificationService from '#services/email_verification_service'
 import AuditService from '#services/audit_service'
+import AuthModeService from '#services/auth_mode_service'
 import type { KioskTokenResponse, TokenResponse } from '#interfaces/api_responses'
 
 export default class AuthController {
   private verifications = new EmailVerificationService()
+  private authModes = new AuthModeService()
   /**
    * @login
    * @summary Kiosk login (keypad/card ID)
@@ -80,6 +82,9 @@ export default class AuthController {
 
     try {
       const user = await User.verifyCredentials(email, password)
+      if (!this.authModes.allowsLocalCredentials(user)) {
+        return response.unauthorized({ error: 'Invalid credentials.' })
+      }
 
       if (user.isDisabled) {
         return response.unauthorized({ error: 'User account is disabled.' })

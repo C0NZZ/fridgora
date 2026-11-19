@@ -157,7 +157,7 @@ export interface CustomerInsightsResponse {
 export interface AuthUserRef {
   id: number
   displayName: string
-  email: string
+  email: string | null
   role: string
 }
 

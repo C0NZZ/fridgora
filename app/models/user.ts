@@ -29,7 +29,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
   declare displayName: string
 
   @column()
-  declare email: string
+  declare email: string | null
 
   @column()
   declare pendingEmail: string | null

@@ -16,7 +16,7 @@ test.group('EmailVerificationService', (group) => {
   test('verifies current email from token', async ({ assert }) => {
     const user = await UserFactory.merge({ emailVerifiedAt: null }).create()
 
-    const payload = await service.createToken(user, user.email)
+    const payload = await service.createToken(user, user.email!)
     const rawToken = payload.verificationUrl.split('/').pop()!
     const result = await service.consumeToken(rawToken)
 

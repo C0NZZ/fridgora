@@ -52,8 +52,9 @@ export default await Env.create(new URL('../', import.meta.url), {
   | Variables for configuring the mail package
   |----------------------------------------------------------
   */
-  SMTP_HOST: Env.schema.string({ format: 'host' }),
-  SMTP_PORT: Env.schema.number(),
+  MAIL_ENABLED: Env.schema.boolean.optional(),
+  SMTP_HOST: Env.schema.string.optional({ format: 'host' }),
+  SMTP_PORT: Env.schema.number.optional(),
   SMTP_USERNAME: Env.schema.string.optional(),
   SMTP_PASSWORD: Env.schema.string.optional(),
   SMTP_FROM_ADDRESS: Env.schema.string.optional({ format: 'email' }),
@@ -66,6 +67,16 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   AUTH_PROVIDERS: Env.schema.string.optional(),
+  AUTH_LOCAL_ADMIN_ONLY: Env.schema.boolean.optional(),
+  AUTH_PROVIDER_OIDC_ISSUER: Env.schema.string.optional({ format: 'url', tld: false }),
+  AUTH_PROVIDER_OIDC_CLIENT_ID: Env.schema.string.optional(),
+  AUTH_PROVIDER_OIDC_CLIENT_SECRET: Env.schema.string.optional(),
+  AUTH_PROVIDER_OIDC_SCOPES: Env.schema.string.optional(),
+  AUTH_PROVIDER_OIDC_TOKEN_AUTH_METHOD: Env.schema.enum.optional([
+    'client_secret_basic',
+    'client_secret_post',
+  ] as const),
+  AUTH_PROVIDER_OIDC_REDIRECT_URI: Env.schema.string.optional({ format: 'url', tld: false }),
   AUTH_AUTO_REGISTER_PROVIDERS: Env.schema.string.optional(),
   AUTH_PROVIDER_MICROSOFT_CLIENT_ID: Env.schema.string.optional(),
   AUTH_PROVIDER_MICROSOFT_CLIENT_SECRET: Env.schema.string.optional(),

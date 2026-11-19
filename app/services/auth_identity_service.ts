@@ -1,4 +1,5 @@
 import db from '@adonisjs/lucid/services/db'
+import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import { DateTime } from 'luxon'
 import User from '#models/user'
 import UserAuthIdentity, { type ExternalAuthProvider } from '#models/user_auth_identity'
@@ -14,12 +15,13 @@ export default class AuthIdentityService {
     provider: ExternalAuthProvider
     providerUserId: string | null
     email: string | null
+    trx?: TransactionClientContract
   }): Promise<IdentityMatch> {
     const providerUserId = params.providerUserId?.trim() || null
     const email = params.email?.trim().toLowerCase() || null
 
     if (providerUserId) {
-      const byProvider = await UserAuthIdentity.query()
+      const byProvider = await UserAuthIdentity.query({ client: params.trx })
         .where('provider', params.provider)
         .where('providerUserId', providerUserId)
         .preload('user')
@@ -29,7 +31,7 @@ export default class AuthIdentityService {
       }
     }
 
-    if (!email) return { kind: 'not_found' }
+    if (!email || params.provider === 'oidc') return { kind: 'not_found' }
 
     const users = await User.query().whereRaw('LOWER(email) = ?', [email]).orderBy('id', 'asc')
     if (users.length === 0) return { kind: 'not_found' }
@@ -56,12 +58,13 @@ export default class AuthIdentityService {
     providerUserId: string
     providerEmail: string | null
     providerEmailVerified: boolean
+    trx?: TransactionClientContract
   }): Promise<'linked' | 'already_linked'> {
     const providerUserId = params.providerUserId.trim()
     const providerEmail = params.providerEmail?.trim().toLowerCase() || null
     const providerEmailVerified = params.providerEmailVerified === true
 
-    const conflict = await UserAuthIdentity.query()
+    const conflict = await UserAuthIdentity.query({ client: params.trx })
       .where('provider', params.provider)
       .where('providerUserId', providerUserId)
       .whereNot('userId', params.userId)
@@ -70,7 +73,7 @@ export default class AuthIdentityService {
       throw new Error('PROVIDER_IDENTITY_ALREADY_LINKED')
     }
 
-    const existingForUser = await UserAuthIdentity.query()
+    const existingForUser = await UserAuthIdentity.query({ client: params.trx })
       .where('userId', params.userId)
       .where('provider', params.provider)
       .first()
@@ -96,16 +99,22 @@ export default class AuthIdentityService {
       return 'already_linked'
     }
 
-    await UserAuthIdentity.create({
-      userId: params.userId,
-      provider: params.provider,
-      providerUserId,
-      providerEmail,
-      providerEmailVerified,
-      lastLoginAt: DateTime.utc(),
-    })
+    await UserAuthIdentity.create(
+      {
+        userId: params.userId,
+        provider: params.provider,
+        providerUserId,
+        providerEmail,
+        providerEmailVerified,
+        lastLoginAt: DateTime.utc(),
+      },
+      { client: params.trx }
+    )
 
-    await db.from('users').where('id', params.userId).update({ updated_at: DateTime.utc().toSQL() })
+    await (params.trx ?? db)
+      .from('users')
+      .where('id', params.userId)
+      .update({ updated_at: DateTime.utc().toSQL() })
 
     return 'linked'
   }

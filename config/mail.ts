@@ -1,12 +1,16 @@
 import env from '#start/env'
-import { defineConfig, transports } from '@adonisjs/mail'
+import { defineConfig, MailResponse, transports } from '@adonisjs/mail'
+
+export function isMailEnabled() {
+  return env.get('MAIL_ENABLED', Boolean(env.get('SMTP_HOST')))
+}
 
 const smtpUsername = env.get('SMTP_USERNAME')
 const smtpPassword = env.get('SMTP_PASSWORD')
 const hasSmtpAuth = Boolean(smtpUsername && smtpPassword)
 
 const mailConfig = defineConfig({
-  default: 'smtp',
+  default: isMailEnabled() ? 'smtp' : 'disabled',
 
   /**
    * A static address for the "from" property. It will be
@@ -22,6 +26,11 @@ const mailConfig = defineConfig({
    * each using a different transport driver.
    */
   mailers: {
+    disabled: () => ({
+      async send() {
+        return new MailResponse('', { from: false, to: [] }, undefined)
+      },
+    }),
     smtp: transports.smtp({
       ...(hasSmtpAuth
         ? {
@@ -32,8 +41,8 @@ const mailConfig = defineConfig({
             },
           }
         : {}),
-      host: env.get('SMTP_HOST'),
-      port: env.get('SMTP_PORT'),
+      host: env.get('SMTP_HOST', 'localhost'),
+      port: env.get('SMTP_PORT', 587),
       ...(env.get('SMTP_IGNORE_TLS')
         ? { ignoreTLS: true, tls: { rejectUnauthorized: false } }
         : {}),

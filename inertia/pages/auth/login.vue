@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import {
+  providerIcon,
+  providerLabel,
+  type ExternalAuthProvider,
+} from '~/composables/auth_providers'
 import { Head, useForm, usePage } from '@inertiajs/vue3'
 import GuestLayout from '~/layouts/GuestLayout.vue'
 import Card from 'primevue/card'
@@ -14,9 +19,10 @@ import { useAppPath } from '~/composables/use_app_path'
 import type { SharedProps } from '~/types'
 
 const props = defineProps<{
-  externalProviders?: Array<'microsoft' | 'discord'>
+  externalProviders?: Array<ExternalAuthProvider>
   allowLocalRegistration?: boolean
   localEnabled?: boolean
+  mailEnabled?: boolean
   returnTo?: string | null
 }>()
 
@@ -58,15 +64,7 @@ function submit() {
     onFinish: () => form.reset('password'),
   })
 }
-function providerLabel(provider: 'microsoft' | 'discord'): string {
-  return provider === 'microsoft' ? 'Microsoft' : 'Discord'
-}
-
-function providerIcon(provider: 'microsoft' | 'discord'): string {
-  return provider === 'microsoft' ? 'pi pi-microsoft' : 'pi pi-discord'
-}
-
-function providerHref(provider: 'microsoft' | 'discord'): string {
+function providerHref(provider: ExternalAuthProvider): string {
   const base = appPath(`/auth/${provider}/redirect`)
   return props.returnTo ? `${base}?returnTo=${encodeURIComponent(props.returnTo)}` : base
 }
@@ -129,7 +127,11 @@ function providerHref(provider: 'microsoft' | 'discord'): string {
             </div>
 
             <div class="flex items-center justify-between text-sm">
-              <a :href="appPath('/forgot-password')" class="text-zinc-300 hover:text-zinc-100">
+              <a
+                v-if="mailEnabled !== false"
+                :href="appPath('/forgot-password')"
+                class="text-zinc-300 hover:text-zinc-100"
+              >
                 {{ t('auth.forgot_password_link') }}
               </a>
               <a

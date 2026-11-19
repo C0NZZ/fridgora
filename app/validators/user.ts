@@ -18,7 +18,7 @@ export const toggleColorModeValidator = vine.compile(
 export const updateProfileValidator = vine.compile(
   vine.object({
     displayName: vine.string().trim().minLength(1).maxLength(255),
-    email: vine.string().trim().email({ require_tld: false }).maxLength(255),
+    email: vine.string().trim().email({ require_tld: false }).maxLength(255).optional(),
     phone: vine.string().trim().maxLength(20).optional().nullable(),
     iban: vine.string().trim().maxLength(24).optional().nullable(),
     currentPassword: vine.string().minLength(1).optional().nullable(),

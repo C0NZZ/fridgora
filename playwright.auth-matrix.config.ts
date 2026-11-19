@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 import { getTestRuntimeEnv } from './tests/utils/test_db.js'
+import { oidcClientId, oidcClientSecret, oidcTestPort } from './tests/utils/oidc_provider.js'
 
-function profile(port: string, authProviders: string) {
+function profile(port: string, authProviders: string, overrides: Record<string, string> = {}) {
   const baseURL = `http://localhost:${port}`
 
   return {
@@ -18,6 +19,7 @@ function profile(port: string, authProviders: string) {
         AUTH_AUTO_REGISTER_PROVIDERS: '',
         AUTH_REGISTRATION_MODE: 'open',
         AUTH_REGISTRATION_ALLOWED_DOMAINS: '',
+        ...overrides,
       }),
     },
   }
@@ -26,6 +28,14 @@ function profile(port: string, authProviders: string) {
 const singleMicrosoft = profile('3346', 'microsoft')
 const multiProviders = profile('3347', 'microsoft,discord')
 const hybridMicrosoft = profile('3348', 'local,microsoft')
+const localAdminOidc = profile('3350', 'local,oidc', {
+  AUTH_LOCAL_ADMIN_ONLY: 'true',
+  AUTH_AUTO_REGISTER_PROVIDERS: 'oidc',
+  AUTH_PROVIDER_OIDC_ISSUER: `http://127.0.0.1:${oidcTestPort}`,
+  AUTH_PROVIDER_OIDC_CLIENT_ID: oidcClientId,
+  AUTH_PROVIDER_OIDC_CLIENT_SECRET: oidcClientSecret,
+  MAIL_ENABLED: 'false',
+})
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -44,9 +54,19 @@ export default defineConfig({
     locale: 'cs-CZ',
   },
 
-  webServer: [singleMicrosoft.webServer, multiProviders.webServer, hybridMicrosoft.webServer],
+  webServer: [
+    singleMicrosoft.webServer,
+    multiProviders.webServer,
+    hybridMicrosoft.webServer,
+    localAdminOidc.webServer,
+  ],
 
   projects: [
+    {
+      name: 'auth-local-admin-oidc',
+      use: { ...devices['Desktop Chrome'], baseURL: localAdminOidc.baseURL },
+      grep: /@local-admin-oidc/,
+    },
     {
       name: 'auth-single-microsoft',
       use: { ...devices['Desktop Chrome'], baseURL: singleMicrosoft.baseURL },
