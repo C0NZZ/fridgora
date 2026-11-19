@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MIN_UNIT_PRICE, MONEY_DECIMAL_PLACES, multiplyMoney, sumMoney } from '#shared/money'
 import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed, watch } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
@@ -35,7 +36,7 @@ const props = defineProps<{
 
 const visible = defineModel<boolean>('visible', { required: true })
 
-const { t, tp } = useI18n()
+const { t, tp, locale } = useI18n()
 const page = usePage()
 
 // Field errors from a server-side validation failure (Inertia shares them as `errors`).
@@ -113,7 +114,10 @@ const priceChanged = computed(
 
 const priceDiffTotal = computed(() => {
   if (!props.delivery || form.value.price === null) return 0
-  return (form.value.price - props.delivery.price) * props.delivery.uninvoicedCount
+  return multiplyMoney(
+    sumMoney([form.value.price, -props.delivery.price]),
+    props.delivery.uninvoicedCount
+  )
 })
 
 // One or two plain sentences instead of a list. The warning colour is reserved for the case
@@ -261,8 +265,10 @@ function submit() {
               :pt="{ pcInputText: { root: { autofocus: true } } }"
               fluid
               highlightOnFocus
-              :min="1"
+              :min="MIN_UNIT_PRICE"
               :max="DELIVERY_MAX_PRICE"
+              :maxFractionDigits="MONEY_DECIMAL_PLACES"
+              :locale="locale"
               :suffix="' ' + t('common.currency')"
               :invalid="!!priceMessage"
               data-testid="correction-price"

@@ -32,10 +32,10 @@ export default class DeliveryCorrection extends BaseModel {
   @column()
   declare newAmountSupplied: number
 
-  @column()
+  @column({ consume: Number })
   declare oldPrice: number
 
-  @column()
+  @column({ consume: Number })
   declare newPrice: number
 
   @column()

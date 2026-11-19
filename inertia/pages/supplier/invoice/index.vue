@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { sumMoney } from '#shared/money'
 import { useAppPath } from '~/composables/use_app_path'
 import { computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
@@ -26,7 +27,7 @@ const confirm = useAppConfirm()
 const { t } = useI18n()
 
 const totalOrders = computed(() => props.uninvoiced.reduce((s, g) => s + g.orderCount, 0))
-const totalCost = computed(() => props.uninvoiced.reduce((s, g) => s + g.totalCost, 0))
+const totalCost = computed(() => sumMoney(props.uninvoiced.map((group) => group.totalCost)))
 
 function generateInvoices() {
   confirm.require({

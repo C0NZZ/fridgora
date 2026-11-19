@@ -52,7 +52,8 @@
     "#mcp/*": "./app/mcp/*.js",
     "#utils/*": "./app/utils/*.js",
     "#auth/*": "./app/auth/*.js",
-    "#interfaces/*": "./app/interfaces/*.js"
+    "#interfaces/*": "./app/interfaces/*.js",
+    "#shared/*": "./shared/*.js"
   },
   "devDependencies": {
     "@adonisjs/assembler": "^8.0.0",

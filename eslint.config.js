@@ -8,4 +8,10 @@ export default [
       'prettier/prettier': 'off',
     },
   },
+  {
+    files: ['inertia/**/*.{ts,tsx}'],
+    rules: {
+      '@adonisjs/no-backend-import-in-frontend': ['error', { allowed: ['#shared/money'] }],
+    },
+  },
 ]

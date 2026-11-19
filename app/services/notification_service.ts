@@ -1,3 +1,4 @@
+import { multiplyMoney, sumMoney } from '#shared/money'
 import mail from '@adonisjs/mail/services/main'
 import router from '@adonisjs/core/services/router'
 import i18nManager from '@adonisjs/i18n/services/main'
@@ -107,7 +108,6 @@ export default class NotificationService {
       number,
       { productName: string; supplierName: string; quantity: number; unitPrice: number }
     >()
-    let totalCost = 0
 
     for (const order of loadedOrders) {
       const key = order.deliveryId
@@ -122,12 +122,12 @@ export default class NotificationService {
           unitPrice: order.unitPrice,
         })
       }
-      totalCost += order.unitPrice
     }
 
+    const totalCost = sumMoney(loadedOrders.map((order) => order.unitPrice))
     const items = Array.from(itemMap.values()).map((i) => ({
       ...i,
-      subtotal: i.quantity * i.unitPrice,
+      subtotal: multiplyMoney(i.unitPrice, i.quantity),
     }))
     const date = loadedOrders[0]?.createdAt.toFormat('dd.MM.yyyy HH:mm') ?? ''
 
@@ -262,7 +262,7 @@ export default class NotificationService {
 
       if (todayOrders.length === 0) continue
 
-      const totalSpent = todayOrders.reduce((sum, o) => sum + o.unitPrice, 0)
+      const totalSpent = sumMoney(todayOrders.map((order) => order.unitPrice))
 
       await mail.send((message) => {
         message
@@ -360,7 +360,7 @@ export default class NotificationService {
       const supplier = invoices[0].supplier
       if (supplier.isDisabled) continue
 
-      const totalPending = invoices.reduce((sum, inv) => sum + inv.totalCost, 0)
+      const totalPending = sumMoney(invoices.map((invoice) => invoice.totalCost))
 
       await mail.send((message) => {
         message
@@ -723,9 +723,9 @@ export default class NotificationService {
       if (buyer.isDisabled || !buyer.email) continue
 
       const count = buyerOrders.length
-      const oldTotal = count * correction.oldPrice
-      const newTotal = count * correction.newPrice
-      const difference = newTotal - oldTotal
+      const oldTotal = multiplyMoney(correction.oldPrice, count)
+      const newTotal = multiplyMoney(correction.newPrice, count)
+      const difference = sumMoney([newTotal, -oldTotal])
 
       await mail.send((message) => {
         message

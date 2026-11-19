@@ -47,17 +47,19 @@ test.group('API Orders', (group) => {
     const user = await UserFactory.create()
     const token = await User.accessTokens.create(user, ['*'])
     const { delivery } = await createStockedDelivery()
+    await delivery.merge({ price: 15.29 }).save()
 
     const response = await client
       .post('/api/v1/orders')
       .header('Authorization', `Bearer ${token.value!.release()}`)
-      .json({ deliveryId: delivery.id, channel: 'kiosk' })
+      .json({ deliveryId: delivery.id, channel: 'kiosk', expectedPrice: 15.29 })
 
     response.assertStatus(201)
     const order = response.body().data
     assert.equal(order.buyerId, user.id)
     assert.equal(order.deliveryId, delivery.id)
     assert.equal(order.channel, 'kiosk')
+    assert.strictEqual(order.unitPrice, 15.29)
     assert.isNull(order.invoiceId)
     assert.isString(order.createdAt)
   })

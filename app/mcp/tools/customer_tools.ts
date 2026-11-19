@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { fromMinorUnits, hasMoneyPrecision, toMinorUnits } from '#shared/money'
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { type CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import type User from '#models/user'
@@ -100,8 +101,8 @@ export function registerCustomerTools(server: McpServer, user: User) {
       quantity: z.number().int().min(1).max(10).optional().describe('Units to buy (default 1)'),
       expectedPrice: z
         .number()
-        .int()
         .min(0)
+        .refine(hasMoneyPrecision, 'Use at most two decimal places')
         .optional()
         .describe(
           'Unit price you showed the user (from list_products). If the lot sold next costs anything else, nothing is bought (PRICE_CHANGED).'
@@ -127,7 +128,7 @@ export function registerCustomerTools(server: McpServer, user: User) {
         const count = quantity ?? 1
         const orderIds: number[] = []
         let price = 0
-        let totalCost = 0
+        let totalMinorUnits = 0
 
         for (let i = 0; i < count; i++) {
           try {
@@ -139,7 +140,7 @@ export function registerCustomerTools(server: McpServer, user: User) {
             if (price === 0) {
               price = order.unitPrice
             }
-            totalCost += order.unitPrice
+            totalMinorUnits += toMinorUnits(order.unitPrice)
           } catch (err) {
             if (orderIds.length > 0) {
               const priceChanged = err instanceof Error && err.message === 'PRICE_CHANGED'
@@ -148,7 +149,7 @@ export function registerCustomerTools(server: McpServer, user: User) {
                 purchased: orderIds.length,
                 requested: count,
                 unitPrice: price,
-                totalCost,
+                totalCost: fromMinorUnits(totalMinorUnits),
                 warning: priceChanged
                   ? `Only ${orderIds.length} of ${count} units purchased — the next delivery lot has a different price; list the product again and confirm the new price.`
                   : `Only ${orderIds.length} of ${count} units purchased — the rest is out of stock.`,
@@ -162,7 +163,7 @@ export function registerCustomerTools(server: McpServer, user: User) {
           orderIds,
           purchased: orderIds.length,
           unitPrice: price,
-          totalCost,
+          totalCost: fromMinorUnits(totalMinorUnits),
           note: 'Purchase confirmed. Payment happens later via invoice (see get_my_invoices).',
         })
       } catch (err) {

@@ -1,3 +1,4 @@
+import { sumMoney } from '#shared/money'
 import { DateTime } from 'luxon'
 import Delivery from '#models/delivery'
 import DeliveryCorrection from '#models/delivery_correction'
@@ -122,7 +123,7 @@ export default class DeliveryService {
 
     const unusualPrice =
       lastDelivery &&
-      Math.abs(price - lastDelivery.price) > UNUSUAL_PRICE_MIN_DIFF &&
+      Math.abs(sumMoney([price, -lastDelivery.price])) > UNUSUAL_PRICE_MIN_DIFF &&
       (price >= lastDelivery.price * UNUSUAL_PRICE_RATIO ||
         price * UNUSUAL_PRICE_RATIO <= lastDelivery.price)
         ? {
@@ -517,7 +518,7 @@ export default class DeliveryService {
       totals: {
         totalProducts: total,
         totalRemaining: mappedWithPeriod.reduce((s, r) => s + r.totalRemaining, 0),
-        totalStockValue: mappedWithPeriod.reduce((s, r) => s + r.totalStockValue, 0),
+        totalStockValue: sumMoney(mappedWithPeriod.map((row) => row.totalStockValue)),
       },
       insights: {
         lowStockCount: lowStockItems.length,

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { sumMoney } from '#shared/money'
 import { computed } from 'vue'
 import { useI18n } from '~/composables/use_i18n'
 
@@ -34,7 +35,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const total = computed(() => props.items.reduce((sum, i) => sum + i.totalPrice, 0))
+const total = computed(() => sumMoney(props.items.map((item) => item.totalPrice)))
 const totalCount = computed(() => props.items.reduce((sum, i) => sum + i.quantity, 0))
 
 const countdownClass = computed(() => {

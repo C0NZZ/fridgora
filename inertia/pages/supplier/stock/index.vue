@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MIN_UNIT_PRICE, MONEY_DECIMAL_PLACES } from '#shared/money'
 import { useAppPath } from '~/composables/use_app_path'
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
@@ -19,6 +20,7 @@ import FilterBar from '~/components/FilterBar.vue'
 import {
   DELIVERY_MAX_AMOUNT,
   DELIVERY_MAX_PRICE,
+  isDeliveryPrice,
 } from '~/composables/use_delivery_correction_validation'
 import PaginatedDataTable from '~/components/PaginatedDataTable.vue'
 
@@ -109,7 +111,7 @@ const props = defineProps<{
   }
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const ALL = '__all__'
 
 const filterCategoryId = ref(props.filters.categoryId || ALL)
@@ -126,6 +128,15 @@ const showFullTable = ref(false)
 const productSelect = ref<any>(null)
 const amountInput = ref<any>(null)
 const priceInput = ref<any>(null)
+const canStock = computed(
+  () =>
+    selectedProduct.value !== null &&
+    amount.value !== null &&
+    Number.isInteger(amount.value) &&
+    amount.value >= 1 &&
+    amount.value <= DELIVERY_MAX_AMOUNT &&
+    isDeliveryPrice(price.value)
+)
 
 const categoryOptions = computed(() => [
   { label: t('common.all'), value: ALL },
@@ -321,7 +332,7 @@ function submitQuickDelivery(confirmWarnings = false) {
   // Enter in the price field bypasses the disabled button, so guard here too — a second
   // Enter while the first request is in flight used to stock the delivery twice.
   if (submitting.value) return
-  if (!selectedProduct.value || !amount.value || !price.value) return
+  if (!canStock.value) return
 
   submitting.value = true
   router.post(
@@ -366,9 +377,7 @@ function onAmountEnter() {
 }
 
 function onPriceEnter() {
-  if (selectedProduct.value && amount.value && price.value) {
-    submitQuickDelivery()
-  }
+  submitQuickDelivery()
 }
 
 function confirmWarningDelivery() {
@@ -465,8 +474,10 @@ function stockSeverity(remaining: number): 'success' | 'warn' | 'danger' {
               ref="priceInput"
               v-model="price"
               fluid
-              :min="1"
+              :min="MIN_UNIT_PRICE"
               :max="DELIVERY_MAX_PRICE"
+              :maxFractionDigits="MONEY_DECIMAL_PLACES"
+              :locale="locale"
               :suffix="' ' + t('common.currency')"
               :placeholder="t('common.currency')"
             />
@@ -478,7 +489,7 @@ function stockSeverity(remaining: number): 'success' | 'warn' | 'danger' {
               :label="t('supplier.deliveries_submit')"
               icon="pi pi-plus"
               :loading="submitting"
-              :disabled="!selectedProduct || !amount || !price || submitting"
+              :disabled="!canStock || submitting"
             />
           </div>
         </form>

@@ -432,10 +432,11 @@ test.group('API MCP - Tool calls', (group) => {
   test('buy_product with a stale expectedPrice buys nothing', async ({ client, assert }) => {
     const user = await UserFactory.create()
     const { delivery } = await createStockedDelivery()
+    await delivery.merge({ price: 20.29 }).save()
 
     const result = await callTool(client, await createToken(user), 'buy_product', {
       deliveryId: delivery.id,
-      expectedPrice: 15,
+      expectedPrice: 20.28,
     })
     assert.isTrue(result.isError)
     assert.include(result.raw, 'PRICE_CHANGED')

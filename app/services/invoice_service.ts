@@ -1,3 +1,4 @@
+import { sumMoney } from '#shared/money'
 import Invoice from '#models/invoice'
 import { PUBLIC_USER_COLUMNS } from '#helpers/public_user'
 import Order from '#models/order'
@@ -38,7 +39,7 @@ export default class InvoiceService {
       const invoices: Invoice[] = []
 
       for (const [buyerId, orders] of byBuyer) {
-        const totalCost = orders.reduce((sum, o) => sum + o.unitPrice, 0)
+        const totalCost = sumMoney(orders.map((order) => order.unitPrice))
 
         // Self-invoice (supplier buying from themselves) — auto-mark as paid
         const isSelfInvoice = buyerId === supplierId
@@ -330,7 +331,7 @@ export default class InvoiceService {
         return null
       }
 
-      const totalCost = orders.reduce((sum, o) => sum + o.unitPrice, 0)
+      const totalCost = sumMoney(orders.map((order) => order.unitPrice))
       const isSelfInvoice = buyerId === supplierId
 
       const invoice = await Invoice.create(
@@ -394,7 +395,7 @@ export default class InvoiceService {
       const invoices: Invoice[] = []
 
       for (const [supplierId, orders] of bySupplier) {
-        const totalCost = orders.reduce((sum, o) => sum + o.unitPrice, 0)
+        const totalCost = sumMoney(orders.map((order) => order.unitPrice))
         const isSelfInvoice = buyerId === supplierId
 
         const invoice = await Invoice.create(

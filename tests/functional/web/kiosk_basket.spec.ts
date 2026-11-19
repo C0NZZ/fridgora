@@ -39,7 +39,7 @@ test.group('POST /kiosk/purchase-basket', (group) => {
       supplierId: supplier.id,
       productId: product1.id,
       amountLeft: 5,
-      price: 15,
+      price: 15.29,
     }).create()
     const delivery2 = await DeliveryFactory.merge({
       supplierId: supplier.id,
@@ -53,7 +53,7 @@ test.group('POST /kiosk/purchase-basket', (group) => {
       .json({
         customerId: customer.id,
         items: [
-          { deliveryId: delivery1.id, quantity: 2 },
+          { deliveryId: delivery1.id, quantity: 2, expectedPrice: 15.29 },
           { deliveryId: delivery2.id, quantity: 1 },
         ],
       })
@@ -68,6 +68,11 @@ test.group('POST /kiosk/purchase-basket', (group) => {
     // 3 order rows created (2 + 1)
     const count = await Order.query().where('buyerId', customer.id).count('* as total')
     assert.equal(Number(count[0].$extras.total), 3)
+    const firstLotOrders = await Order.query().where('deliveryId', delivery1.id)
+    assert.deepEqual(
+      firstLotOrders.map((order) => order.unitPrice),
+      [15.29, 15.29]
+    )
 
     // The customer is the actor; the terminal that took the order is recorded alongside.
     const logs = await db.from('audit_logs').where('action', 'order.created')

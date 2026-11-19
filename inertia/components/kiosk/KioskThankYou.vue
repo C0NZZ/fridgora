@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { multiplyMoney, sumMoney } from '#shared/money'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '~/composables/use_i18n'
 
@@ -32,7 +33,9 @@ const DURATION = 5
 const secondsLeft = ref(DURATION)
 let timer: ReturnType<typeof setInterval> | null = null
 
-const total = computed(() => props.items.reduce((sum, i) => sum + i.price * i.quantity, 0))
+const total = computed(() =>
+  sumMoney(props.items.map((item) => multiplyMoney(item.price, item.quantity)))
+)
 const progressWidth = computed(() => `${(secondsLeft.value / DURATION) * 100}%`)
 
 onMounted(() => {
@@ -106,7 +109,9 @@ onUnmounted(() => {
               </p>
             </div>
             <p class="flex-shrink-0 text-xl font-bold text-green-400">
-              {{ t('common.price_with_currency', { price: item.price * item.quantity }) }}
+              {{
+                t('common.price_with_currency', { price: multiplyMoney(item.price, item.quantity) })
+              }}
             </p>
           </div>
         </div>

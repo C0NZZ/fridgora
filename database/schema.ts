@@ -97,7 +97,7 @@ export class DeliverySchema extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
   @column()
-  declare price: number
+  declare price: string
   @column()
   declare productId: number
   @column()
@@ -126,11 +126,11 @@ export class DeliveryCorrectionSchema extends BaseModel {
   @column()
   declare newAmountSupplied: number
   @column()
-  declare newPrice: number
+  declare newPrice: string
   @column()
   declare oldAmountSupplied: number
   @column()
-  declare oldPrice: number
+  declare oldPrice: string
   @column()
   declare reason: string
   @column()
@@ -199,7 +199,7 @@ export class InvoiceSchema extends BaseModel {
   @column()
   declare supplierId: number
   @column()
-  declare totalCost: number
+  declare totalCost: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 }
@@ -410,11 +410,11 @@ export class OrderSchema extends BaseModel {
   @column()
   declare invoiceId: number | null
   @column()
-  declare originalUnitPrice: number | null
+  declare originalUnitPrice: string | null
   @column()
   declare priceCorrectionId: number | null
   @column()
-  declare unitPrice: number
+  declare unitPrice: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 }

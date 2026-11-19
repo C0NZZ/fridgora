@@ -14,7 +14,7 @@ export default class Invoice extends BaseModel {
   @column()
   declare supplierId: number
 
-  @column()
+  @column({ consume: Number })
   declare totalCost: number
 
   @column()

@@ -145,7 +145,10 @@ test.group('Delivery amount and price limits', (group) => {
     assert.equal(delivery.price, 10)
   })
 
-  test('stocking a fractional amount or price is rejected', async ({ client, assert }) => {
+  test('stocking requires whole quantities and accepts prices to the cent', async ({
+    client,
+    assert,
+  }) => {
     const supplier = await UserFactory.apply('supplier').create()
     const category = await CategoryFactory.create()
     const product = await ProductFactory.merge({ categoryId: category.id }).create()
@@ -160,10 +163,20 @@ test.group('Delivery amount and price limits', (group) => {
       .post('/supplier/deliveries')
       .loginAs(supplier)
       .withCsrfToken()
-      .json({ productId: product.id, amount: 2, price: 9.5, confirmWarnings: true })
+      .json({ productId: product.id, amount: 2, price: 9.501, confirmWarnings: true })
+      .redirects(0)
+    assert.lengthOf(await db.from('deliveries').where('product_id', product.id), 0)
+
+    await client
+      .post('/supplier/deliveries')
+      .loginAs(supplier)
+      .withCsrfToken()
+      .json({ productId: product.id, amount: 2, price: 0.29, confirmWarnings: true })
       .redirects(0)
 
-    assert.lengthOf(await db.from('deliveries').where('product_id', product.id), 0)
+    const rows = await db.from('deliveries').where('product_id', product.id)
+    assert.lengthOf(rows, 1)
+    assert.equal(Number(rows[0].price), 0.29)
   })
 
   test('the frontend validation mirror uses the same limits as the backend', ({ assert }) => {

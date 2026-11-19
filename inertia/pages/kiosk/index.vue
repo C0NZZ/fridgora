@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { multiplyMoney, sumMoney } from '#shared/money'
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import { useToast } from 'primevue/usetoast'
@@ -190,7 +191,10 @@ const basketItems = computed<BasketDisplayItem[]>(() => {
     const existing = grouped.get(line.productId)
     if (existing) {
       existing.quantity += line.quantity
-      existing.totalPrice += line.price * line.quantity
+      existing.totalPrice = sumMoney([
+        existing.totalPrice,
+        multiplyMoney(line.price, line.quantity),
+      ])
       continue
     }
 
@@ -199,7 +203,7 @@ const basketItems = computed<BasketDisplayItem[]>(() => {
       displayName: line.displayName,
       imagePath: line.imagePath,
       quantity: line.quantity,
-      totalPrice: line.price * line.quantity,
+      totalPrice: multiplyMoney(line.price, line.quantity),
       canIncrement:
         (personalizedProducts.value.find((p) => p.id === line.productId)?.remainingStock ?? 0) > 0,
     })
@@ -490,7 +494,7 @@ function requestCheckout() {
   if (basket.value.length === 0) return
   resetIdleTimer()
 
-  const total = basket.value.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const total = sumMoney(basket.value.map((line) => multiplyMoney(line.price, line.quantity)))
   const count = basket.value.reduce((sum, i) => sum + i.quantity, 0)
 
   confirm.require({

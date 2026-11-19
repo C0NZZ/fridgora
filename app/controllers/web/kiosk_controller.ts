@@ -14,7 +14,7 @@ import MusicService from '#services/music_service'
 import logger from '@adonisjs/core/services/logger'
 import KioskSession from '#models/kiosk_session'
 import db from '@adonisjs/lucid/services/db'
-import { purchaseBasketValidator } from '#validators/order'
+import { kioskPurchaseValidator, purchaseBasketValidator } from '#validators/order'
 
 export default class KioskController {
   /**
@@ -207,17 +207,11 @@ export default class KioskController {
    * Legacy single-item purchase — kept for /kiosk/shop page.
    */
   async purchase({ request, response }: HttpContext) {
-    const customerId = request.input('customerId')
-    const deliveryId = request.input('deliveryId')
-    const rawExpectedPrice = request.input('expectedPrice')
-    const expectedPrice =
-      rawExpectedPrice === undefined || rawExpectedPrice === null || rawExpectedPrice === ''
-        ? undefined
-        : Number(rawExpectedPrice)
-
-    if (!customerId || !deliveryId) {
+    if (!request.input('customerId') || !request.input('deliveryId')) {
       return response.redirect('/kiosk')
     }
+    const { customerId, deliveryId, expectedPrice } =
+      await request.validateUsing(kioskPurchaseValidator)
 
     // The customer id comes from the request, so re-check the target is a live account.
     const customer = await User.query().where('id', customerId).where('isDisabled', false).first()
@@ -228,12 +222,7 @@ export default class KioskController {
     const orderService = new OrderService()
 
     try {
-      const order = await orderService.purchase(
-        customerId,
-        deliveryId,
-        'kiosk',
-        Number.isFinite(expectedPrice) ? expectedPrice : undefined
-      )
+      const order = await orderService.purchase(customerId, deliveryId, 'kiosk', expectedPrice)
 
       const notificationService = new NotificationService()
       notificationService.sendPurchaseConfirmation(order).catch((err) => {

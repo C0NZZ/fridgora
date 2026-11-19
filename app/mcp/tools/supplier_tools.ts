@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { hasMoneyPrecision, MIN_UNIT_PRICE, sumMoney } from '#shared/money'
+import { DELIVERY_MAX_PRICE } from '#validators/delivery'
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { type CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import type User from '#models/user'
@@ -24,7 +26,12 @@ export function registerSupplierTools(server: McpServer, user: User) {
     {
       productId: z.number().int().positive().describe('Product to stock'),
       amount: z.number().int().min(1).max(1000).describe('Number of units delivered'),
-      price: z.number().positive().describe('Unit price in CZK for this lot'),
+      price: z
+        .number()
+        .min(MIN_UNIT_PRICE)
+        .max(DELIVERY_MAX_PRICE)
+        .refine(hasMoneyPrecision, 'Use at most two decimal places')
+        .describe('Unit price for this lot in the configured currency'),
     },
     async ({ productId, amount, price }): Promise<CallToolResult> => {
       try {
@@ -296,7 +303,7 @@ export function registerSupplierTools(server: McpServer, user: User) {
         const summary = await new InvoiceService().getUninvoicedSummary(user.id)
         return ok({
           buyers: summary,
-          totalUninvoiced: summary.reduce((s, r) => s + r.totalCost, 0),
+          totalUninvoiced: sumMoney(summary.map((row) => row.totalCost)),
         })
       } catch (err) {
         return fail(`Error fetching summary: ${String(err)}`)

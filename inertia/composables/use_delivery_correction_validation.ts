@@ -1,5 +1,6 @@
 import { computed, type Ref } from 'vue'
 import { useI18n } from '~/composables/use_i18n'
+import { hasMoneyPrecision, MIN_UNIT_PRICE } from '#shared/money'
 
 // Mirrors app/validators/delivery.ts (and the amount rules in DeliveryService.correctDelivery:
 // only decreases, never below the sold count).
@@ -8,6 +9,15 @@ export const CORRECTION_REASON_MIN_LENGTH = 3
 export const CORRECTION_REASON_MAX_LENGTH = 500
 export const DELIVERY_MAX_PRICE = 100_000
 export const DELIVERY_MAX_AMOUNT = 10_000
+
+export function isDeliveryPrice(price: number | null): boolean {
+  return (
+    price !== null &&
+    price >= MIN_UNIT_PRICE &&
+    price <= DELIVERY_MAX_PRICE &&
+    hasMoneyPrecision(price)
+  )
+}
 
 export interface DeliveryCorrectionFormState {
   amount: number | null
@@ -42,8 +52,8 @@ export function useDeliveryCorrectionValidation(
 
   const priceError = computed(() => {
     const v = form.value.price
-    if (v === null || !Number.isInteger(v) || v < 1 || v > DELIVERY_MAX_PRICE) {
-      return t('supplier.correction_price_hint', { max: DELIVERY_MAX_PRICE })
+    if (!isDeliveryPrice(v)) {
+      return t('supplier.correction_price_hint', { min: MIN_UNIT_PRICE, max: DELIVERY_MAX_PRICE })
     }
     return null
   })

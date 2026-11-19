@@ -106,7 +106,7 @@ test.describe('Role-aware app bar navigation', () => {
     const stockUrl = page.url()
     await page.getByPlaceholder('ks').fill('3')
     await page.getByPlaceholder('ks').press('Enter')
-    await page.getByPlaceholder('Kč').fill('49')
+    await page.getByPlaceholder('Kč').fill('49,25')
     const [delivery] = await Promise.all([
       page.waitForResponse(
         (response) =>
@@ -115,7 +115,9 @@ test.describe('Role-aware app bar navigation', () => {
       ),
       page.getByPlaceholder('Kč').press('Enter'),
     ])
+    expect(delivery.request().postDataJSON().price).toBe(49.25)
     expect(new URL(delivery.headers().location, origin).href).toBe(stockUrl)
+    await expect(page.getByText('49.25 Kč', { exact: true }).first()).toBeVisible()
 
     await nav.getByText('Dodavatel', { exact: true }).click()
     await nav.getByText('Produkty', { exact: true }).click()

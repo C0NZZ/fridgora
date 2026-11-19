@@ -262,7 +262,7 @@ test.describe('Kiosk product images', () => {
     await page.keyboard.press('Enter')
     await page.getByPlaceholder('Kč').fill('25')
     await page.keyboard.press('Enter')
-    await expect(page.getByText(name).first()).toBeVisible()
+    await expect(page.getByText('Naskladněno 2 ks za 25 Kč/ks.')).toBeVisible()
 
     await loginAs(page, 'kiosk')
     await page.goto('/kiosk/shop?keypadId=89992')

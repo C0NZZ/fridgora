@@ -142,7 +142,11 @@ export const evalToolDefinitions: EvalToolDefinition[] = [
         properties: {
           productId: { type: 'number', description: 'Product to stock' },
           amount: { type: 'number', description: 'Number of units delivered' },
-          price: { type: 'number', description: 'Unit price in CZK for this lot' },
+          price: {
+            type: 'number',
+            description:
+              'Unit price for this lot in the configured currency, with up to two decimal places',
+          },
         },
         required: ['productId', 'amount', 'price'],
       },

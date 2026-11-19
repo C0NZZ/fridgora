@@ -105,7 +105,7 @@ test.describe('Supplier delivery corrections', () => {
 
     const priceInput = dialog.getByRole('spinbutton').nth(1)
     await expect(priceInput).toBeFocused()
-    await priceInput.fill('25')
+    await priceInput.fill('25,29')
     await priceInput.blur()
     await expect(dialog.getByTestId('correction-impact')).toHaveText(
       'Nová cena platí jen pro 5 ks na skladě.'
@@ -120,7 +120,7 @@ test.describe('Supplier delivery corrections', () => {
     const corrected = rows.nth(1)
     await expect(corrected.getByTestId('delivery-status-corrected')).toBeVisible()
     await expect(corrected.getByTestId('delivery-last-correction')).toContainText('Překlep v ceně')
-    await expect(corrected).toContainText('25 Kč')
+    await expect(corrected).toContainText('25.29 Kč')
   })
 
   test('a corrected price reaches the buyer and the reason opens in a dialog', async ({ page }) => {
@@ -174,5 +174,40 @@ test.describe('Supplier delivery corrections', () => {
     await expect(detail).toContainText('25 Kč')
     await detail.getByRole('button', { name: 'Zavřít' }).last().click()
     await expect(detail).toBeHidden()
+  })
+
+  test('kiosk checkout keeps the exact total for several items priced in cents', async ({
+    page,
+    browser,
+  }) => {
+    const productName = `E2E Haléře ${Date.now()}`
+    await loginAs(page, 'supplier')
+    await createProduct(page, productName)
+    await stock(page, '3', '0,29')
+    await expect(page.getByText('Naskladněno 3 ks za 0.29 Kč/ks.')).toBeVisible()
+
+    const kiosk = await browser.newPage({ baseURL: new URL(page.url()).origin, locale: 'cs-CZ' })
+    try {
+      await loginAs(kiosk, 'kiosk')
+      await kiosk.goto('/kiosk')
+      await kiosk.keyboard.type('89992')
+      await kiosk.keyboard.press('Enter')
+
+      const product = kiosk.locator('.grid-cols-3').getByText(productName, { exact: true })
+      await product.click()
+      await product.click()
+      await product.click()
+      await expect(kiosk.getByText('0.87 Kč', { exact: true })).toHaveCount(2)
+
+      await kiosk.locator('button:has(.pi-shopping-cart)').first().click()
+      const confirm = kiosk.getByRole('alertdialog')
+      await expect(confirm).toContainText('Koupit 3 položek za 0.87 Kč?')
+      await confirm.getByRole('button', { name: 'Dokončit nákup' }).click()
+
+      await expect(kiosk.getByRole('heading', { name: /Díky/ })).toBeVisible()
+      await expect(kiosk.getByText('0.87 Kč', { exact: true }).last()).toBeVisible()
+    } finally {
+      await kiosk.close()
+    }
   })
 })

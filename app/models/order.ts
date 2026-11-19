@@ -23,11 +23,11 @@ export default class Order extends BaseModel {
   declare channel: 'web' | 'kiosk' | 'scanner'
 
   /** Price the buyer pays for this unit — snapshotted, see the add_unit_price migration. */
-  @column()
+  @column({ consume: Number })
   declare unitPrice: number
 
   /** Price at purchase time, set only once a correction changed `unitPrice`. */
-  @column()
+  @column({ consume: (value) => (value === null ? null : Number(value)) })
   declare originalUnitPrice: number | null
 
   @column()

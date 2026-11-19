@@ -26,22 +26,22 @@ test.group('InvoiceService - generateInvoices', (group) => {
   group.each.setup(cleanAll)
   group.each.teardown(cleanAll)
 
-  test('generates one invoice per buyer for uninvoiced orders', async ({ assert }) => {
+  test('generates one invoice per buyer and preserves fractional totals', async ({ assert }) => {
     const supplier = await UserFactory.apply('supplier').create()
     const buyer = await UserFactory.create()
     const delivery = await DeliveryFactory.with('product', 1, (p) => p.with('category'))
-      .merge({ supplierId: supplier.id, amountSupplied: 5, amountLeft: 4, price: 20 })
+      .merge({ supplierId: supplier.id, amountSupplied: 5, amountLeft: 2, price: 0.29 })
       .create()
 
-    // Create 2 uninvoiced orders for same buyer
-    await OrderFactory.merge({ buyerId: buyer.id, deliveryId: delivery.id }).createMany(2)
+    await OrderFactory.merge({ buyerId: buyer.id, deliveryId: delivery.id }).createMany(3)
 
     const invoices = await invoiceService.generateInvoices(supplier.id)
 
     assert.lengthOf(invoices, 1)
     assert.equal(invoices[0].buyerId, buyer.id)
     assert.equal(invoices[0].supplierId, supplier.id)
-    assert.equal(invoices[0].totalCost, 40) // 2 × 20
+    await invoices[0].refresh()
+    assert.strictEqual(invoices[0].totalCost, 0.87)
     assert.isFalse(invoices[0].isPaid)
     assert.isFalse(invoices[0].isPaymentRequested)
   })
